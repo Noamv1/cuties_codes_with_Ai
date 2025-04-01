@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <title>חישוב סכום</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .calculator-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .calculator-container input[type="number"] {
+            width: calc(50% - 10px);
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        .calculator-container button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .calculator-container button:hover {
+            background-color: #45a049;
+        }
+        .calculator-container p {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>חישוב סכום</h1>
+        <input type="number" id="num1" placeholder="מספר ראשון">
+        <input type="number" id="num2" placeholder="מספר שני">
+        <button onclick="calculateSum()">חשב סכום</button>
+        <p>התוצאה: <span id="result"></span></p>
+    </div>
+
+    <script>
+        function calculateSum() {
+            const num1 = parseFloat(document.getElementById('num1').value);
+            const num2 = parseFloat(document.getElementById('num2').value);
+
+            if (isNaN(num1) || isNaN(num2)) {
+                alert('נא להזין מספרים תקינים.');
+                return;
+            }
+
+            const sum = num1 + num2;
+            document.getElementById('result').innerText = sum;
+        }
+    </script>
+</body>
+</html>
