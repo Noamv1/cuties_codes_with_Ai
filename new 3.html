@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>בדיחות אופליין</title>
+    <style>
+        body {
+            font-family: Assistant, Arial, sans-serif; /* פונט נעים בעברית */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f8ff; /* רקע תכלת בהיר */
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box; /* כדי ש-padding לא יוסיף לגודל */
+            text-align: center;
+        }
+
+        #joke-container {
+            background-color: #ffffff; /* רקע לבן לאזור הבדיחה */
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* הצללה קלה */
+            min-height: 100px; /* גובה מינימלי להחזיק מקום */
+            width: 80%;
+            max-width: 600px; /* רוחב מקסימלי */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #joke-display {
+            font-size: 1.5em; /* גודל טקסט גדול יותר */
+            color: #333; /* צבע טקסט כהה */
+            opacity: 1;
+            transition: opacity 0.5s ease-in-out; /* אפקט מעבר שקוף */
+        }
+
+        /* קלאס לאפקט ה-fade */
+        #joke-display.fade-out {
+            opacity: 0;
+        }
+
+        button {
+            margin-top: 25px;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            background-color: #4CAF50; /* צבע ירוק לכפתור */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049; /* צבע ירוק כהה יותר במעבר עכבר */
+        }
+
+        h1 {
+            color: #0056b3; /* צבע כחול לכותרת */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>בדיחה קטנה לאופליין</h1>
+
+    <div id="joke-container">
+        <p id="joke-display">לחץ על הכפתור לקבלת בדיחה...</p>
+    </div>
+
+    <button id="next-joke-button">בדיחה הבאה!</button>
+
+    <script>
+        // מאגר הבדיחות - אפשר להוסיף/לשנות כאוות נפשך
+        const jokes = [
+            "איך קוראים לדג בלי עין? דג.",
+            "למה פיל לובש נעלי ספורט אדומות? כדי שיוכל להתחבא בערוגת תותים. ראית פעם פיל בערוגת תותים? סימן שהוא התחבא טוב!",
+            "מה ההבדל בין פיל למקרר? מקרר עושה קולות בלילה, אבל אף אחד לא מתלונן.",
+            "ילד שואל את אבא שלו: אבא, מה זה להיות שיכור? האבא עונה: אתה רואה את שני העצים שם? שיכור יראה ארבעה. הילד: אבל אבא, יש שם רק עץ אחד!",
+            "איך יודעים שמקרר עצוב? יש לו גלידה בפנים.",
+            "איש אחד נכנס למסעדה ומזמין מרק. המלצר מגיש לו את המרק והאיש אומר: המלצר! יש לי זבוב במרק! המלצר עונה: דבר בשקט, אחרת כולם ירצו גם.",
+            "מה עושה עגבניה עם גלימה? סופר עגבניה!",
+            "למה דג לא יכול לדבר בטלפון? כי יש לו קוצים.",
+            "שאלה: מה עושה נעל על עמוד חשמל? תשובה: מחכה לזרם...",
+            "איך קוראים לבומרנג שלא חוזר? מקל."
+        ];
+
+        // קבלת הפניות לאלמנטים ב-HTML
+        const jokeDisplayElement = document.getElementById('joke-display');
+        const nextJokeButton = document.getElementById('next-joke-button');
+        let currentJokeIndex = -1; // משתנה למעקב אחר הבדיחה האחרונה שהוצגה (למקרה שנרצה למנוע חזרות)
+
+        function showRandomJoke() {
+            // להוסיף קלאס fade-out כדי להתחיל את האפקט
+            jokeDisplayElement.classList.add('fade-out');
+
+            // לחכות שהאפקט יסתיים לפני החלפת הטקסט
+            setTimeout(() => {
+                let randomIndex;
+                // ודא שהבדיחה החדשה שונה מהקודמת (אופציונלי)
+                if (jokes.length > 1) {
+                    do {
+                        randomIndex = Math.floor(Math.random() * jokes.length);
+                    } while (randomIndex === currentJokeIndex);
+                } else {
+                    randomIndex = 0; // אם יש רק בדיחה אחת
+                }
+
+                currentJokeIndex = randomIndex; // עדכון האינדקס הנוכחי
+                const randomJoke = jokes[randomIndex];
+                jokeDisplayElement.textContent = randomJoke; // הצגת הבדיחה
+
+                // להסיר את קלאס ה-fade-out ולהחזיר את ה-opacity לאט
+                jokeDisplayElement.classList.remove('fade-out');
+            }, 500); // זמן ההמתנה צריך להיות זהה לזמן המעבר ב-CSS
+        }
+
+        // הוספת מאזין אירועים לכפתור
+        nextJokeButton.addEventListener('click', showRandomJoke);
+
+        // הצגת בדיחה ראשונה בעת טעינת הדף (אופציונלי)
+        // אם רוצים שהדף יתחיל עם ההודעה "לחץ על הכפתור...", יש להסיר את השורה הבאה:
+        // showRandomJoke(); // אפשר להסיר אם רוצים שההודעה הראשונית תישאר עד הלחיצה הראשונה
+
+    </script>
+
+</body>
+</html>

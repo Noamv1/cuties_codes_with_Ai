@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>בדיחות ללא אינטרנט</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            text-align: right;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .joke-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .joke {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .punchline {
+            font-weight: bold;
+            color: #3498db;
+            margin-top: 10px;
+            display: none;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .category-btn {
+            background-color: #95a5a6;
+            margin: 5px;
+        }
+        .category-btn.active {
+            background-color: #2c3e50;
+        }
+        .stats {
+            text-align: center;
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-top: 20px;
+        }
+        .favorites-section {
+            margin-top: 30px;
+            display: none;
+        }
+        .long-joke .joke, .long-joke .punchline {
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <h1>בדיחות ללא אינטרנט</h1>
+    
+    <div class="controls">
+        <button class="category-btn active" onclick="filterJokes('all')">הכל</button>
+        <button class="category-btn" onclick="filterJokes('short')">קצרות</button>
+        <button class="category-btn" onclick="filterJokes('programmer')">מתכנתים</button>
+        <button class="category-btn" onclick="filterJokes('dad')">אבא</button>
+        <button class="category-btn" onclick="filterJokes('long')">ארוכות</button>
+        <button class="category-btn" onclick="filterJokes('children')">ילדים</button>
+        <button class="category-btn" onclick="filterJokes('animals')">חיות</button>
+        <button class="category-btn" onclick="filterJokes('workplace')">עבודה</button>
+        <button class="category-btn" onclick="filterJokes('puns')">משחקי מילים</button>
+    </div>
+    
+    <div class="joke-container">
+        <div class="joke">מה הבדיחה השתמשה הכי הרבה?</div>
+        <div class="punchline">הבדיחה על הדלת, כי היא תמיד נוקשת!</div>
+        <button onclick="revealPunchline(this)">להראות את הפואנטה</button>
+    </div>
+    
+    <div class="controls">
+        <button onclick="showRandomJoke()">בדיחה אקראית</button>
+        <button onclick="addToFavorites()">הוסף למועדפים</button>
+        <button onclick="toggleFavorites()">הצג מועדפים</button>
+    </div>
+    
+    <div class="favorites-section">
+        <h2>המועדפים שלי</h2>
+        <div id="favorites-container"></div>
+    </div>
+    
+    <div class="stats">
+        <span id="joke-count">0</span> בדיחות במאגר
+    </div>
+    
+    <script>
+        // מאגר הבדיחות - מורחב עם מאות בדיחות
+        const jokes = [
+            // בדיחות קצרות
+            {
+                setup: "מה הבדיחה השתמשה הכי הרבה?",
+                punchline: "הבדיחה על הדלת, כי היא תמיד נוקשת!",
+                category: "short"
+            },
+            {
+                setup: "איך קוראים לאדם שלא מדבר בבוקר?",
+                punchline: "אדם שקט",
+                category: "short"
+            },
+            {
+                setup: "מה אמר הדף הריק לעיפרון?",
+                punchline: "תכתוב משהו, אני ריק מרעיונות",
+                category: "short"
+            },
+            {
+                setup: "מה יותר קשה מאבן?",
+                punchline: "כמה אבנים",
+                category: "short"
+            },
+            {
+                setup: "לאן הולכים החתולים כשהזנב שלהם נעלם?",
+                punchline: "למחלקה לאבדות ומציאות",
+                category: "short"
+            },
+            {
+                setup: "מה עושה דג בלי עין?",
+                punchline: "דג",
+                category: "short"
+            },
+            {
+                setup: "איך נכנסת פילה לבריכה?",
+                punchline: "רטובה!",
+                category: "short"
+            },
+            {
+                setup: "מה אמר מלאך אחד למלאך השני?",
+                punchline: "היי, מה נשמע?",
+                category: "short"
+            },
+            {
+                setup: "איך קוראים לארנב בלי אוזניים?",
+                punchline: "הוא לא שומע בכל מקרה!",
+                category: "short"
+            },
+            {
+                setup: "מה אמר הכלב לבעליו אחרי יום ארוך?",
+                punchline: "היום היה מעייף בצורה כלבית",
+                category: "short"
+            },
+            {
+                setup: "מה ההבדל בין פיצה לצייר גרוע?",
+                punchline: "הפיצה יכולה להאכיל משפחה",
+                category: "short"
+            },
+            {
+                setup: "לאן הולכים כל הסוכרים כשהם רוצים לרקוד?",
+                punchline: "למועדון הסוכר",
+                category: "short"
+            },
+            {
+                setup: "איזה כלי נגינה הכי מלוכלך?",
+                punchline: "הסקסופון",
+                category: "short"
+            },
+            {
+                setup: "למה האוקיינוס תמיד מברך אותנו לשלום?",
+                punchline: "כי הוא גלי (גל לי)",
+                category: "short"
+            },
+            {
+                setup: "איך קוראים לגבינה שלא שלך?",
+                punchline: "גבינה של מישהו אחר",
+                category: "short"
+            },
+            {
+                setup: "מה עושה מטאטא בגיל 18?",
+                punchline: "יוצא מהארון",
+                category: "short"
+            },
+            {
+                setup: "איך חייזר עושה צילום סלפי?",
+                punchline: "הוא לוקח צלחת מעופפת",
+                category: "short"
+            },
+            {
+                setup: "איך קוראים לחתול שנפל לקערת קמח?",
+                punchline: "עוגת שמרים",
+                category: "short"
+            },
+            {
+                setup: "איך עוברים את הכביש בצורה בטוחה?",
+                punchline: "עם עזרה מהתמרור",
+                category: "short"
+            },
+            {
+                setup: "במה ישנה מכונת כביסה?",
+                punchline: "בשקית כביסה",
+                category: "short"
+            },
+            {
+                setup: "איפה ישנים העפרונות?",
+                punchline: "במחדד",
+                category: "short"
+            },
+            {
+                setup: "איך קוראים לרופא שמפחד מאותיות?",
+                punchline: "ד\"ר סלופוביה",
+                category: "short"
+            },
+            {
+                setup: "מה השעה כאשר שעון נופל?",
+                punchline: "זמן לקנות שעון חדש",
+                category: "short"
+            },
+            {
+                setup: "בן כמה תפוח אדמה בן שנה?",
+                punchline: "צ'יפס",
+                category: "short"
+            },
+            {
+                setup: "מהי מילת הקסם של פיראט?",
+                punchline: "אררר בבקשה",
+                category: "short"
+            },
+            {
+                setup: "איזה צבע הכי מצחיק?",
+                punchline: "כחולה (כ-חולה מצחוק)",
+                category: "short"
+            },
+            {
+                setup: "איזה פרי הכי אוהב לצאת למסיבות?",
+                punchline: "אפרסמון (אפטר-מון)",
+                category: "short"
+            },
+
+            // בדיחות מתכנתים
+            {
+                setup: "יש לי בדיחה על JavaScript",
+                punchline: "אבל היא לא עובדת אצל כולם",
+                category: "programmer"
+            },
+            {
+                setup: "למה מתכנתים לא אוהבים את הטבע?",
+                punchline: "יש שם יותר מדי באגים",
+                category: "programmer"
+            },
+            {
+                setup: "איך תוכנת מגיב כשהוא רעב?",
+                punchline: "הוא הולך לאכול ביטים",
+                category: "programmer"
+            },
+            {
+                setup: "למה מתכנתים תמיד מבלבלים את חג החנוכה וחג המולד?",
+                punchline: "כי Dec 25 = Oct 31",
+                category: "programmer"
+            },
+            {
+                setup: "למה מתכנתים Python לא אוהבים להכין אוכל?",
+                punchline: "כי הם שונאים כאשר צריך להזיז את הרווחים הלבנים",
+                category: "programmer"
+            },
+            {
+                setup: "מה אמר מתכנת כאשר הוא נתקע באמצע הכביש?",
+                punchline: "אני זקוק לדריסת מפתח",
+                category: "programmer"
+            },
+            {
+                setup: "כמה מתכנתים צריך כדי להחליף נורה?",
+                punchline: "אף אחד, זו בעיית חומרה",
+                category: "programmer"
+            },
+            {
+                setup: "למה מתכנתים אף פעם לא מרוצים?",
+                punchline: "כי הם תמיד רואים את ה-;",
+                category: "programmer"
+            },
+            {
+                setup: "איך מתכנת רושם הודעת אהבה?",
+                punchline: "אני && את == אהבה_אינסופית",
+                category: "programmer"
+            },
+            {
+                setup: "מה אומר מתכנת בתור מורה?",
+                punchline: "תירגעו, כל הבאגים שלכם זה רק פיצ'רים שלא תיעדתם",
+                category: "programmer"
+            },
+            {
+                setup: "איך בודקים אם מתכנת הוא אקסטרוברט?",
+                punchline: "הוא מסתכל על הנעליים של מישהו אחר כשהוא מדבר איתו",
+                category: "programmer"
+            },
+            {
+                setup: "מה קורה כשמתכנת Python נתקע בגשם?",
+                punchline: "הוא נכנס לIndentation Error",
+                category: "programmer"
+            },
+            {
+                setup: "מה קרה למתכנת שזרקו אותו מחלון?",
+                punchline: "הוא נפל ל-Exception",
+                category: "programmer"
+            },
+            {
+                setup: "למה מתכנתים גרועים בספורט?",
+                punchline: "כי כל הקריירה שלהם הם התרכזו בלרוץ מבאגים",
+                category: "programmer"
+            },
+            {
+                setup: "איך מתכנת סופר כבשים כדי להירדם?",
+                punchline: "כבשה[0], כבשה[1], כבשה[2]...",
+                category: "programmer"
+            },
+            {
+                setup: "למה לSQL יש בעיות יחסים?",
+                punchline: "כי הוא לא יודע להתחייב (commit)",
+                category: "programmer"
+            },
+            {
+                setup: "איזה סוג של רופא הכי שונא באגים?",
+                punchline: "דוקטור SQL (sequel)",
+                category: "programmer"
+            },
+            {
+                setup: "מתכנת הלך למכולת וביקשו ממנו להביא לחם...",
+                punchline: "הוא הביא לחם, חלב, ביצים וגבינה - כי אמרו לו 'ואם יש ביצים תביא שישה'",
+                category: "programmer"
+            },
+            {
+                setup: "למה מתכנתים תמיד מבלבלים בין חג מולד וחנוכה?",
+                punchline: "כי Dec 25 = Oct 31",
+                category: "programmer"
+            },
+            {
+                setup: "מי מנצח במאבק בין HTML ו-CSS?",
+                punchline: "ה-CSS! לו יש style",
+                category: "programmer"
+            },
+
+            // בדיחות אבא
+            {
+                setup: "מה אמר האבא לבנו שהתבלבל בסופרמרקט?",
+                punchline: "אל תדאג, אנחנו נמצא את הדרך הביתה",
+                category: "dad"
+            },
+            {
+                setup: "איך קוראים לאדם בלי גוף ובלי אף?",
+                punchline: "אף אחד",
+                category: "dad"
+            },
+            {
+                setup: "מה עושה דג כשהוא נכנס לקיר?",
+                punchline: "אומר \"דגדג\"",
+                category: "dad"
+            },
+            {
+                setup: "למה הפיל לא השתמש במחשב?",
+                punchline: "כי הוא פחד מהעכבר",
+                category: "dad"
+            },
+            {
+                setup: "מה אמר המספר 0 למספר 8?",
+                punchline: "איזו חגורה יפה יש לך!",
+                category: "dad"
+            },
+            {
+                setup: "איך קוראים לכלב בלי רגליים?",
+                punchline: "לא משנה, הוא בכל מקרה לא יבוא",
+                category: "dad"
+            },
+            {
+                setup: "מה קורה לנייר כאשר הוא מתבייש?",
+                punchline: "הוא הופך אדום (מסמיק)",
+                category: "dad"
+            },
+            {
+                setup: "איזה יום הכי שונא בצל?",
+                punchline: "יום ראשון (Sun-day)",
+                category: "dad"
+            },
+            {
+                setup: "איזה מילון הכי זול?",
+                punchline: "מילון בהנחה! (מלון בהנחה)",
+                category: "dad"
+            },
+            {
+                setup: "איזה סלט הכי אוהב לצאת?",
+                punchline: "סלט יוצאים (יציאות)",
+                category: "dad"
+            },
+            {
+                setup: "מה אמר העיפרון למחדד?",
+                punchline: "אתה גורם לי להרגיש חד יותר",
+                category: "dad"
+            },
+            {
+                setup: "למה הנמלה לא חלתה?",
+                punchline: "כי לנמלה יש אנטיביוטיקה",
+                category: "dad"
+            },
+            {
+                setup: "איזה כלי רכב הכי מוזיקלי?",
+                punchline: "האוטו-טו (אוטו-טיון)",
+                category: "dad"
+            },
+            {
+                setup: "מה אמר האב בית לדיירים?",
+                punchline: "אני מדריך בניין",
+                category: "dad"
+            },
+            {
+                setup: "איזה ספר הכי אוהב מספרים?",
+                punchline: "ספר חשבון",
+                category: "dad"
+            },
+            {
+                setup: "מה אמר הפיל הקטן לאמא שלו?",
+                punchline: "למה את כל כך מגודלת?",
+                category: "dad"
+            },
+            {
+                setup: "איך קוראים לאדם שלא יכול לספור עד עשר?",
+                punchline: "אדם חסר פרי (חסר ספירה)",
+                category: "dad"
+            },
+            {
+                setup: "מה אמר הדלי לטיפה?",
+                punchline: "אל תיפלי!",
+                category: "dad"
+            },
+            {
+                setup: "מה עושה מאה שבלולים מחוץ לדיסקוטק?",
+                punchline: "מחכים בתור",
+                category: "dad"
+            },
+            {
+                setup: "איזה מקצוע צריך להרבה עבודת יד?",
+                punchline: "שען!",
+                category: "dad"
+            },
+
+            // בדיחות ארוכות
+            {
+                setup: "הגיע בחור צעיר למשרד כוח אדם בחיפוש אחר עבודה. הפקידה נתנה לו טופס למילוי ובטופס הוא נדרש לענות על השאלה הבאה: 'סיבה לעזיבת מקום העבודה הקודם?' הבחור חשב רגע ואז כתב: 'מוות'. הפקידה התפלאה ושאלה: 'מוות? של מי?'",
+                punchline: "הבחור ענה: 'של הבוס הקודם שלי כשאמרתי לו שאני רוצה העלאה'",
+                category: "long"
+            },
+            {
+                setup: "שלושה גברים מבוגרים נפגשים בפארק כל בוקר להליכה משותפת. האחד אומר: 'הזיכרון שלי כבר לא מה שהיה פעם, אתמול עמדתי במקלחת ולא זכרתי אם אני נכנס למקלחת או יוצא ממנה'. השני אומר: 'זה כלום, אתמול ישבתי על המדרגות ולא זכרתי אם אני עולה או יורד'. השלישי מסתכל על שניהם ואומר: 'אני דווקא שמח שהזיכרון שלי עדיין חד וטוב, טפו טפו טפו', והוא דופק על העץ. ואז הוא משתתק לרגע, עם מבט מבולבל, ואומר:",
+                punchline: "'רגע, מישהו דפק בדלת, אני אלך לפתוח'",
+                category: "long"
+            },
+            {
+                setup: "אישה נכנסת לחנות חיות ומבחינה בתוכי יפה. 'האם התוכי הזה מדבר?' היא שואלת את המוכר. 'בוודאי, גברת!' עונה המוכר בגאווה. 'זהו תוכי מיוחד שמדבר מצוין'. האישה מסתכלת על התוכי ושואלת: 'היי תוכי, אתה יודע לדבר?' התוכי מתעלם ממנה. 'תוכי? אתה שומע אותי?' היא מנסה שוב. התוכי עדיין לא מגיב. האישה פונה למוכר: 'חשבתי שאמרת שהוא מדבר'. המוכר נבוך מעט אך מיד מתעשת ואומר: 'הו, הוא בהחלט מדבר! הוא פשוט לא אוהב לשקר'.",
+                punchline: "'מה זאת אומרת?' שואלת האישה. והמוכר עונה: 'ובכן, אם הוא היה עונה לך, הוא היה משקר - כי הוא באמת לא יודע אותך!'",
+                category: "long"
+            },
+            {
+                setup: "קבוצת מדענים החליטה לערוך ניסוי. הם לקחו חמישה קופים, הכניסו אותם לכלוב גדול ובמרכז הכלוב הציבו סולם ומעליו, בתקרת הכלוב, תלו בננה. כשקוף אחד התחיל לטפס במעלה הסולם כדי להגיע לבננה, המדענים התיזו מים קרים על כל הקופים האחרים. לאחר כמה פעמים כאלה, ברגע שקוף כלשהו ניסה לטפס בסולם, שאר הקופים מיד תקפו אותו כדי למנוע ממנו להגיע לבננה, מחשש שיקבלו שוב מקלחת קרה. בשלב מסוים הפסיקו המדענים להתיז מים, אך הקופים המשיכו למנוע מכל קוף שניסה לטפס בסולם להגיע לבננה. אז החליפו המדענים קוף אחד בקוף חדש. הקוף החדש, כצפוי, מיד ניסה להגיע לבננה, אבל שאר הקופים תקפו אותו. אחרי כמה ניסיונות כושלים, הקוף החדש הבין את הכלל: אסור לטפס על הסולם! אז החליפו המדענים קוף שני בקוף חדש ושוב אותו סיפור. המעניין הוא שגם הקוף הראשון שהוחלף השתתף במניעת הקוף החדש מלטפס על הסולם, למרות שהוא מעולם לא חווה את המקלחת הקרה. כך המשיכו המדענים להחליף את כל הקופים המקוריים, עד שלא נשאר אף קוף שבאמת חווה את המקלחת הקרה. למרות זאת, אף קוף לא העז להתקרב לסולם.",
+                punchline: "אילו יכולנו לשאול את הקופים מדוע הם לא מאפשרים לטפס על הסולם, סביר שהתשובה הייתה: 'ככה זה תמיד היה פה'",
+                category: "long"
+            },
+            {
+                setup: "איש עסקים עשיר יושב במחלקה ראשונה בטיסה ליעד רחוק כשלפתע מתיישבת לידו אישה זקנה. היא מוציאה סריגה ומתחילה לסרוג. לאחר זמן מה היא פונה אליו: 'צעיר, אולי תרצה לשחק במשחק מילים כדי להעביר את הזמן?' האיש, שלא ממש התעניין, מנומס מדי מכדי לסרב לאישה זקנה. 'במה מדובר?' הוא שואל. האישה מסבירה: 'אני שואלת שאלה, אם אתה לא יודע את התשובה אתה משלם לי 5 שקלים. אז אתה שואל אותי, ואם אני לא יודעת - אני משלמת לך 5 שקלים'. האיש, בראותו שהיא אישה זקנה ופשוטה, מסכים. האישה שואלת: 'מה המרחק מכדור הארץ לירח?' האיש, שלא יודע את התשובה המדויקת, מוציא 5 שקלים ונותן לה. 'עכשיו תורי,' הוא אומר, 'מה זה שעולה על ההר עם שלוש רגליים ויורד עם ארבע רגליים?' האישה חושבת, חושבת, מנסה למצוא תשובה אך לא מצליחה. היא מוציאה 5 שקלים ונותנת לו. 'אז מה התשובה?' היא שואלת בסקרנות. האיש מוציא עוד 5 שקלים ונותן לה בשתיקה.",
+                punchline: "הזקנה מחייכת בניצחון ומחזירה לסריגה שלה",
+                category: "long"
+            },
+            {
+                setup: "רופא, עורך דין ומהנדס תקועים באי בודד. יום אחד הם מוצאים מנורת קסמים ישנה. הם משפשפים אותה ויוצא שד. 'אתם שחררתם אותי ממאה שנות כלא במנורה,' אומר השד, 'ולכן אעניק לכל אחד מכם משאלה אחת'. הרופא אומר: 'אני מתגעגע למשפחה שלי ולעבודה שלי. הלוואי שיכולתי לחזור הביתה'. 'משאלתך התגשמה,' אומר השד, והרופא נעלם מהאי בענן עשן. עורך הדין אומר: 'גם אני רוצה לחזור הביתה. התיקים שלי מחכים לי והלקוחות זקוקים לי'. 'משאלתך התגשמה,' אומר השד, והעורך דין נעלם מהאי בענן עשן. השד פונה למהנדס: 'ומה המשאלה שלך?' המהנדס מסתכל סביב האי השומם, חושב לרגע ואומר:",
+                punchline: "'הממ... די בודד פה עכשיו. אפשר להחזיר את השניים האחרים?'",
+                category: "long"
+            },
+            
+            // הבדיחות החדשות
+            {
+                setup: "מה מדען אחד אמר למדען השני?",
+                punchline: "מצאנו פתרון לבעיה!",
+                category: "short"
+            }
+        ];
+        
+        // מעקב אחר הבדיחות המועדפות
+        let favorites = [];
+        
+        // פיענוח הבדיחה הנוכחית
+        let currentCategory = 'all';
+        
+        // פונקציה להצגת הפואנטה
+        function revealPunchline(button) {
+            const jokeContainer = button.parentElement;
+            const punchline = jokeContainer.querySelector('.punchline');
+            punchline.style.display = 'block';
+            button.textContent = 'הסתר את הפואנטה';
+            button.onclick = function() { hidePunchline(this); };
+        }
+        
+        // פונקציה להסתרת הפואנטה
+        function hidePunchline(button) {
+            const jokeContainer = button.parentElement;
+            const punchline = jokeContainer.querySelector('.punchline');
+            punchline.style.display = 'none';
+            button.textContent = 'להראות את הפואנטה';
+            button.onclick = function() { revealPunchline(this); };
+        }
+        
+        // פונקציה להצגת בדיחה אקראית
+        function showRandomJoke() {
+            const filteredJokes = currentCategory === 'all' ? 
+                jokes : jokes.filter(joke => joke.category === currentCategory);
+            
+            if (filteredJokes.length === 0) {
+                return;
+            }
+            
+            const randomIndex = Math.floor(Math.random() * filteredJokes.length);
+            const randomJoke = filteredJokes[randomIndex];
+            
+            const jokeContainer = document.querySelector('.joke-container');
+            jokeContainer.querySelector('.joke').textContent = randomJoke.setup;
+            jokeContainer.querySelector('.punchline').textContent = randomJoke.punchline;
+            jokeContainer.querySelector('.punchline').style.display = 'none';
+            
+            const button = jokeContainer.querySelector('button');
+            button.textContent = 'להראות את הפואנטה';
+            button.onclick = function() { revealPunchline(this); };
+            
+            // הוסף class אם זו בדיחה ארוכה
+            jokeContainer.classList.toggle('long-joke', randomJoke.category === 'long');
+        }
+        
+        // פונקציה לסינון הבדיחות לפי קטגוריה
+        function filterJokes(category) {
+            currentCategory = category;
+            
+            const categoryButtons = document.querySelectorAll('.category-btn');
+            categoryButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase().includes(category));
+            });
+            
+            showRandomJoke();
+        }
+        
+        // פונקציה להוספת בדיחה למועדפים
+        function addToFavorites() {
+            const jokeContainer = document.querySelector('.joke-container');
+            const setup = jokeContainer.querySelector('.joke').textContent;
+            const punchline = jokeContainer.querySelector('.punchline').textContent;
+            
+            // בדוק שהבדיחה לא כבר במועדפים
+            if (!favorites.some(joke => joke.setup === setup)) {
+                favorites.push({ setup, punchline });
+                updateFavoritesDisplay();
+            }
+        }
+        
+        // פונקציה לעדכון תצוגת המועדפים
+        function updateFavoritesDisplay() {
+            const favoritesContainer = document.getElementById('favorites-container');
+            favoritesContainer.innerHTML = '';
+            
+            favorites.forEach((joke, index) => {
+                const jokeDiv = document.createElement('div');
+                jokeDiv.className = 'joke-container';
+                
+                const jokeSetup = document.createElement('div');
+                jokeSetup.className = 'joke';
+                jokeSetup.textContent = joke.setup;
+                
+                const jokePunchline = document.createElement('div');
+                jokePunchline.className = 'punchline';
+                jokePunchline.textContent = joke.punchline;
+                jokePunchline.style.display = 'none';
+                
+                const showButton = document.createElement('button');
+                showButton.textContent = 'להראות את הפואנטה';
+                showButton.onclick = function() { revealPunchline(this); };
+                
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'הסר מהמועדפים';
+                removeButton.onclick = function() { 
+                    favorites.splice(index, 1);
+                    updateFavoritesDisplay();
+                };
+                
+                jokeDiv.appendChild(jokeSetup);
+                jokeDiv.appendChild(jokePunchline);
+                jokeDiv.appendChild(showButton);
+                jokeDiv.appendChild(removeButton);
+                
+                favoritesContainer.appendChild(jokeDiv);
+            });
+        }
+        
+        // פונקציה להצגת/הסתרת המועדפים
+        function toggleFavorites() {
+            const favoritesSection = document.querySelector('.favorites-section');
+            favoritesSection.style.display = favoritesSection.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // עדכון מספר הבדיחות
+        document.getElementById('joke-count').textContent = jokes.length;
+        
+        // הצגת בדיחה אקראית בטעינה
+        showRandomJoke();
+    </script>
+</body>
+<!-- הוסף את הדיב הזה לפני תגית הסקריפט האחרונה בסוף הגוף של המסמך -->
+<div class="admin-section">
+    <h2>ניהול בדיחות</h2>
+    <div class="joke-form">
+        <h3>הוספת בדיחה חדשה</h3>
+        <input type="text" id="new-joke-setup" placeholder="הכנס את הבדיחה" class="form-input">
+        <input type="text" id="new-joke-punchline" placeholder="הכנס את הפואנטה" class="form-input">
+        <select id="new-joke-category" class="form-select">
+            <option value="short">קצרה</option>
+            <option value="programmer">מתכנתים</option>
+            <option value="dad">אבא</option>
+            <option value="long">ארוכה</option>
+            <option value="children">ילדים</option>
+            <option value="animals">חיות</option>
+            <option value="workplace">עבודה</option>
+            <option value="puns">משחקי מילים</option>
+        </select>
+        <button onclick="addNewJoke()">הוסף בדיחה</button>
+    </div>
+    
+    <div class="joke-management">
+        <h3>ניהול בדיחות קיימות</h3>
+        <button onclick="toggleJokeManagement()">הצג/הסתר רשימת בדיחות</button>
+        <div id="jokes-list-container" style="display: none;">
+            <input type="text" id="joke-search" placeholder="חיפוש בדיחות..." class="form-input" onkeyup="searchJokes()">
+            <div id="jokes-list" class="jokes-list"></div>
+        </div>
+    </div>
+    
+    <div class="additional-features">
+        <h3>תכונות נוספות</h3>
+        <button onclick="exportJokes()">ייצוא בדיחות (JSON)</button>
+        <input type="file" id="import-jokes-file" accept=".json" style="display: none;">
+        <button onclick="document.getElementById('import-jokes-file').click()">ייבוא בדיחות</button>
+        <button onclick="enableDarkMode()">מצב לילה</button>
+        <button onclick="shareJoke()">שתף בדיחה נוכחית</button>
+    </div>
+</div>
+
+<style>
+    /* סגנונות לאזור הניהול */
+    .admin-section {
+        margin-top: 40px;
+        background-color: #f8f8f8;
+        border-radius: 8px;
+        padding: 20px;
+        border: 1px solid #ddd;
+    }
+    
+    .form-input, .form-select {
+        padding: 8px;
+        margin: 5px 0;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        width: 100%;
+        max-width: 400px;
+    }
+    
+    .joke-form, .joke-management, .additional-features {
+        margin-bottom: 20px;
+    }
+    
+    .jokes-list {
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 10px;
+    }
+    
+    .joke-item {
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .joke-item-controls {
+        margin-top: 5px;
+    }
+    
+    /* מצב לילה */
+    body.dark-mode {
+        background-color: #222;
+        color: #eee;
+    }
+    
+    body.dark-mode .joke-container,
+    body.dark-mode .admin-section {
+        background-color: #333;
+        color: #eee;
+        border-color: #555;
+    }
+    
+    body.dark-mode .joke-item {
+        background-color: #444;
+        border-color: #555;
+    }
+    
+    body.dark-mode button {
+        background-color: #555;
+        color: #eee;
+    }
+    
+    body.dark-mode button:hover {
+        background-color: #666;
+    }
+    
+    body.dark-mode .form-input,
+    body.dark-mode .form-select {
+        background-color: #444;
+        color: #eee;
+        border-color: #555;
+    }
+    
+    .share-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0,0,0,0.7);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .share-modal-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 500px;
+        width: 90%;
+    }
+    
+    body.dark-mode .share-modal-content {
+        background-color: #333;
+        color: #eee;
+    }
+    
+    .close-modal {
+        float: right;
+        font-size: 24px;
+        cursor: pointer;
+    }
+</style>
+
+<!-- הוסף את הדיב הזה לפני תגית הסקריפט האחרונה בסוף הגוף של המסמך -->
+<div class="share-modal" id="share-modal">
+    <div class="share-modal-content">
+        <span class="close-modal" onclick="closeShareModal()">&times;</span>
+        <h3>שתף בדיחה</h3>
+        <p id="share-joke-text"></p>
+        <textarea id="share-joke-full" rows="4" class="form-input" readonly></textarea>
+        <div style="margin-top: 10px;">
+            <button onclick="copyToClipboard()">העתק ללוח</button>
+            <button onclick="closeShareModal()">סגור</button>
+        </div>
+    </div>
+</div>
+
+<!-- הוסף את הקוד הזה בתוך תגית הסקריפט הקיימת, לפני הסוגר האחרון של הסקריפט -->
+// פונקציה להוספת בדיחה חדשה
+function addNewJoke() {
+    const setup = document.getElementById('new-joke-setup').value.trim();
+    const punchline = document.getElementById('new-joke-punchline').value.trim();
+    const category = document.getElementById('new-joke-category').value;
+    
+    if (setup === '' || punchline === '') {
+        alert('יש למלא את הבדיחה והפואנטה!');
+        return;
+    }
+    
+    // הוספת הבדיחה למאגר
+    jokes.push({
+        setup: setup,
+        punchline: punchline,
+        category: category
+    });
+    
+    // עדכון מספר הבדיחות
+    document.getElementById('joke-count').textContent = jokes.length;
+    
+    // ניקוי השדות
+    document.getElementById('new-joke-setup').value = '';
+    document.getElementById('new-joke-punchline').value = '';
+    
+    // עדכון רשימת הבדיחות אם היא מוצגת
+    if (document.getElementById('jokes-list-container').style.display !== 'none') {
+        updateJokesList();
+    }
+    
+    // הצגת הודעת אישור
+    alert('הבדיחה נוספה בהצלחה!');
+    
+    // שמירה למאגר מקומי
+    saveJokesToLocalStorage();
+}
+
+// פונקציה להצגת/הסתרת רשימת הבדיחות
+function toggleJokeManagement() {
+    const container = document.getElementById('jokes-list-container');
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        updateJokesList();
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+// פונקציה לעדכון רשימת הבדיחות
+function updateJokesList() {
+    const jokesList = document.getElementById('jokes-list');
+    jokesList.innerHTML = '';
+    
+    jokes.forEach((joke, index) => {
+        const jokeItem = document.createElement('div');
+        jokeItem.className = 'joke-item';
+        jokeItem.innerHTML = `
+            <div><strong>בדיחה:</strong> ${joke.setup}</div>
+            <div><strong>פואנטה:</strong> ${joke.punchline}</div>
+            <div><strong>קטגוריה:</strong> ${getCategoryName(joke.category)}</div>
+            <div class="joke-item-controls">
+                <button onclick="editJoke(${index})">ערוך</button>
+                <button onclick="deleteJoke(${index})">מחק</button>
+            </div>
+        `;
+        jokesList.appendChild(jokeItem);
+    });
+}
+
+// פונקציה להמרת קוד קטגוריה לשם מלא
+function getCategoryName(categoryCode) {
+    const categories = {
+        'short': 'קצרה',
+        'programmer': 'מתכנתים',
+        'dad': 'אבא',
+        'long': 'ארוכה',
+        'children': 'ילדים',
+        'animals': 'חיות',
+        'workplace': 'עבודה',
+        'puns': 'משחקי מילים'
+    };
+    return categories[categoryCode] || categoryCode;
+}
+
+// פונקציה לעריכת בדיחה
+function editJoke(index) {
+    const joke = jokes[index];
+    
+    const newSetup = prompt('ערוך את הבדיחה:', joke.setup);
+    if (newSetup === null) return; // המשתמש ביטל
+    
+    const newPunchline = prompt('ערוך את הפואנטה:', joke.punchline);
+    if (newPunchline === null) return; // המשתמש ביטל
+    
+    // עדכון הבדיחה
+    jokes[index].setup = newSetup;
+    jokes[index].punchline = newPunchline;
+    
+    // עדכון התצוגה
+    updateJokesList();
+    
+    // שמירה למאגר מקומי
+    saveJokesToLocalStorage();
+}
+
+// פונקציה למחיקת בדיחה
+function deleteJoke(index) {
+    if (confirm('האם אתה בטוח שברצונך למחוק את הבדיחה הזו?')) {
+        jokes.splice(index, 1);
+        
+        // עדכון מספר הבדיחות
+        document.getElementById('joke-count').textContent = jokes.length;
+        
+        // עדכון התצוגה
+        updateJokesList();
+        
+        // שמירה למאגר מקומי
+        saveJokesToLocalStorage();
+    }
+}
+
+// פונקציה לחיפוש בדיחות
+function searchJokes() {
+    const searchTerm = document.getElementById('joke-search').value.toLowerCase();
+    const jokesList = document.getElementById('jokes-list');
+    jokesList.innerHTML = '';
+    
+    jokes.forEach((joke, index) => {
+        if (joke.setup.toLowerCase().includes(searchTerm) || 
+            joke.punchline.toLowerCase().includes(searchTerm) ||
+            getCategoryName(joke.category).toLowerCase().includes(searchTerm)) {
+            
+            const jokeItem = document.createElement('div');
+            jokeItem.className = 'joke-item';
+            jokeItem.innerHTML = `
+                <div><strong>בדיחה:</strong> ${joke.setup}</div>
+                <div><strong>פואנטה:</strong> ${joke.punchline}</div>
+                <div><strong>קטגוריה:</strong> ${getCategoryName(joke.category)}</div>
+                <div class="joke-item-controls">
+                    <button onclick="editJoke(${index})">ערוך</button>
+                    <button onclick="deleteJoke(${index})">מחק</button>
+                </div>
+            `;
+            jokesList.appendChild(jokeItem);
+        }
+    });
+}
+
+// פונקציה לייצוא הבדיחות כקובץ JSON
+function exportJokes() {
+    const jokesJson = JSON.stringify(jokes, null, 4);
+    const blob = new Blob([jokesJson], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'jokes_backup_' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// הוספת מאזין אירועים לקובץ ייבוא
+document.getElementById('import-jokes-file').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const importedJokes = JSON.parse(e.target.result);
+                if (Array.isArray(importedJokes)) {
+                    if (confirm(`נמצאו ${importedJokes.length} בדיחות. האם להחליף את המאגר הקיים או להוסיף לו?`)) {
+                        // החלפת המאגר הקיים
+                        jokes.length = 0;
+                        importedJokes.forEach(joke => jokes.push(joke));
+                    } else {
+                        // הוספה למאגר הקיים
+                        importedJokes.forEach(joke => jokes.push(joke));
+                    }
+                    
+                    // עדכון מספר הבדיחות
+                    document.getElementById('joke-count').textContent = jokes.length;
+                    
+                    // עדכון התצוגה אם היא פתוחה
+                    if (document.getElementById('jokes-list-container').style.display !== 'none') {
+                        updateJokesList();
+                    }
+                    
+                    // שמירה למאגר מקומי
+                    saveJokesToLocalStorage();
+                    
+                    alert('הבדיחות יובאו בהצלחה!');
+                } else {
+                    alert('פורמט קובץ לא תקין!');
+                }
+            } catch (error) {
+                alert('שגיאה בעיבוד הקובץ: ' + error.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+});
+
+// פונקציה להפעלת מצב לילה
+function enableDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    localStorage.setItem('darkMode', isDarkMode);
+}
+
+// פונקציה לשיתוף הבדיחה הנוכחית
+function shareJoke() {
+    const jokeContainer = document.querySelector('.joke-container');
+    const setup = jokeContainer.querySelector('.joke').textContent;
+    const punchline = jokeContainer.querySelector('.punchline').textContent;
+    
+    document.getElementById('share-joke-text').textContent = setup;
+    document.getElementById('share-joke-full').value = `${setup}\n\n${punchline}`;
+    
+    document.getElementById('share-modal').style.display = 'flex';
+}
+
+// פונקציה לסגירת חלון השיתוף
+function closeShareModal() {
+    document.getElementById('share-modal').style.display = 'none';
+}
+
+// פונקציה להעתקת הבדיחה ללוח
+function copyToClipboard() {
+    const textArea = document.getElementById('share-joke-full');
+    textArea.select();
+    document.execCommand('copy');
+    alert('הבדיחה הועתקה ללוח!');
+}
+
+// פונקציה לשמירת הבדיחות במאגר מקומי
+function saveJokesToLocalStorage() {
+    localStorage.setItem('jokes', JSON.stringify(jokes));
+}
+
+// פונקציה לטעינת הבדיחות מהמאגר המקומי
+function loadJokesFromLocalStorage() {
+    const savedJokes = localStorage.getItem('jokes');
+    if (savedJokes) {
+        jokes.length = 0; // ניקוי המערך הקיים
+        JSON.parse(savedJokes).forEach(joke => jokes.push(joke));
+        document.getElementById('joke-count').textContent = jokes.length;
+    }
+    
+    // טעינת הגדרת מצב לילה אם קיימת
+    const darkMode = localStorage.getItem('darkMode');
+    if (darkMode === 'true') {
+        document.body.classList.add('dark-mode');
+    }
+}
+
+// טעינת הבדיחות בטעינת העמוד
+window.addEventListener('DOMContentLoaded', loadJokesFromLocalStorage);
+</html>

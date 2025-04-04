@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מחולל הבדיחות</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f9f9;
+            direction: rtl;
+            text-align: right;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .joke-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .joke {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .punchline {
+            font-size: 20px;
+            font-weight: bold;
+            color: #0077cc;
+            margin-bottom: 20px;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        
+        .punchline.show {
+            opacity: 1;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        button {
+            background-color: #0077cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #005fa3;
+        }
+        
+        .category-filters {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .category-btn {
+            background-color: #eee;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .category-btn.active {
+            background-color: #0077cc;
+            color: white;
+        }
+        
+        .joke-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* סגנונות לאזור הניהול */
+        .admin-section {
+            margin-top: 40px;
+            background-color: #f8f8f8;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+        
+        .form-input, .form-select {
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .joke-form, .joke-management, .additional-features {
+            margin-bottom: 20px;
+        }
+        
+        .jokes-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        
+        .joke-item {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .joke-item-controls {
+            margin-top: 5px;
+        }
+        
+        /* מצב לילה */
+        body.dark-mode {
+            background-color: #222;
+            color: #eee;
+        }
+        
+        body.dark-mode .joke-container,
+        body.dark-mode .admin-section {
+            background-color: #333;
+            color: #eee;
+            border-color: #555;
+        }
+        
+        body.dark-mode .joke-item {
+            background-color: #444;
+            border-color: #555;
+        }
+        
+        body.dark-mode button {
+            background-color: #555;
+            color: #eee;
+        }
+        
+        body.dark-mode button:hover {
+            background-color: #666;
+        }
+        
+        body.dark-mode .form-input,
+        body.dark-mode .form-select {
+            background-color: #444;
+            color: #eee;
+            border-color: #555;
+        }
+        
+        body.dark-mode .category-btn {
+            background-color: #444;
+            color: #eee;
+            border-color: #555;
+        }
+        
+        body.dark-mode .category-btn.active {
+            background-color: #0077cc;
+        }
+        
+        body.dark-mode .punchline {
+            color: #66b0ff;
+        }
+        
+        .share-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .share-modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        body.dark-mode .share-modal-content {
+            background-color: #333;
+            color: #eee;
+        }
+        
+        .close-modal {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>מחולל הבדיחות</h1>
+            <p>לחץ על הכפתור כדי לקבל בדיחה אקראית או בחר קטגוריה ספציפית</p>
+        </div>
+        
+        <div class="category-filters">
+            <button class="category-btn active" data-category="all">הכל (<span id="joke-count">0</span>)</button>
+            <button class="category-btn" data-category="short">קצרות</button>
+            <button class="category-btn" data-category="programmer">מתכנתים</button>
+            <button class="category-btn" data-category="dad">אבא</button>
+            <button class="category-btn" data-category="long">ארוכות</button>
+            <button class="category-btn" data-category="children">ילדים</button>
+            <button class="category-btn" data-category="animals">חיות</button>
+            <button class="category-btn" data-category="workplace">עבודה</button>
+            <button class="category-btn" data-category="puns">משחקי מילים</button>
+        </div>
+        
+        <div class="joke-container">
+            <div class="joke">לחץ על "בדיחה חדשה" כדי להתחיל!</div>
+            <div class="punchline"></div>
+            <div class="controls">
+                <button id="new-joke-btn">בדיחה חדשה</button>
+                <button id="show-punchline-btn">הצג פואנטה</button>
+            </div>
+            <div class="joke-info">
+                קטגוריה: <span id="current-category">-</span>
+            </div>
+        </div>
+
+        <div class="admin-section">
+            <h2>ניהול בדיחות</h2>
+            <div class="joke-form">
+                <h3>הוספת בדיחה חדשה</h3>
+                <input type="text" id="new-joke-setup" placeholder="הכנס את הבדיחה" class="form-input">
+                <input type="text" id="new-joke-punchline" placeholder="הכנס את הפואנטה" class="form-input">
+                <select id="new-joke-category" class="form-select">
+                    <option value="short">קצרה</option>
+                    <option value="programmer">מתכנתים</option>
+                    <option value="dad">אבא</option>
+                    <option value="long">ארוכה</option>
+                    <option value="children">ילדים</option>
+                    <option value="animals">חיות</option>
+                    <option value="workplace">עבודה</option>
+                    <option value="puns">משחקי מילים</option>
+                </select>
+                <button onclick="addNewJoke()">הוסף בדיחה</button>
+            </div>
+            
+            <div class="joke-management">
+                <h3>ניהול בדיחות קיימות</h3>
+                <button onclick="toggleJokeManagement()">הצג/הסתר רשימת בדיחות</button>
+                <div id="jokes-list-container" style="display: none;">
+                    <input type="text" id="joke-search" placeholder="חיפוש בדיחות..." class="form-input" onkeyup="searchJokes()">
+                    <div id="jokes-list" class="jokes-list"></div>
+                </div>
+            </div>
+            
+            <div class="additional-features">
+                <h3>תכונות נוספות</h3>
+                <button onclick="exportJokes()">ייצוא בדיחות (JSON)</button>
+                <input type="file" id="import-jokes-file" accept=".json" style="display: none;">
+                <button onclick="document.getElementById('import-jokes-file').click()">ייבוא בדיחות</button>
+                <button onclick="enableDarkMode()">מצב לילה</button>
+                <button onclick="shareJoke()">שתף בדיחה נוכחית</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="share-modal" id="share-modal">
+        <div class="share-modal-content">
+            <span class="close-modal" onclick="closeShareModal()">&times;</span>
+            <h3>שתף בדיחה</h3>
+            <p id="share-joke-text"></p>
+            <textarea id="share-joke-full" rows="4" class="form-input" readonly></textarea>
+            <div style="margin-top: 10px;">
+                <button onclick="copyToClipboard()">העתק ללוח</button>
+                <button onclick="closeShareModal()">סגור</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // מאגר בדיחות ראשוני
+        let jokes = [
+            {
+                setup: "למה מתכנת מעדיף את החורף?",
+                punchline: "כי אז אין לו באגים!",
+                category: "programmer"
+            },
+			
+            {
+                setup: "איך קוראים לאבא שחזר מהעבודה?",
+                punchline: "אבא-דייט!",
+                category: "dad"
+            },
+            {
+                setup: "מה אמר המספר 0 למספר 8?",
+                punchline: "איזו חגורה יפה יש לך!",
+                category: "short"
+            },
+            {
+                setup: "אתה יודע למה ג'אווה סקריפט כל כך עצוב?",
+                punchline: "כי הוא תמיד לבד... בצד של הלקוח.",
+                category: "programmer"
+            },
+            {
+                setup: "מהו פינגווין?",
+                punchline: "גולש מקוטב!",
+                category: "animals"
+            }
+        ];
+        
+        let currentCategory = "all";
+        let currentJokeIndex = -1;
+        
+        // עדכון מספר הבדיחות
+        document.getElementById('joke-count').textContent = jokes.length;
+        
+        // הפעלת כפתורי קטגוריה
+        const categoryButtons = document.querySelectorAll('.category-btn');
+        categoryButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                currentCategory = this.dataset.category;
+                
+                // הסרת סימון מכל הכפתורים
+                categoryButtons.forEach(btn => btn.classList.remove('active'));
+                
+                // הוספת סימון לכפתור הנוכחי
+                this.classList.add('active');
+                
+                // טעינת בדיחה חדשה מהקטגוריה הנבחרת
+                getNewJoke();
+            });
+        });
+        
+        // כפתור בדיחה חדשה
+        document.getElementById('new-joke-btn').addEventListener('click', getNewJoke);
+        
+        // כפתור הצגת פואנטה
+        document.getElementById('show-punchline-btn').addEventListener('click', showPunchline);
+        
+        // פונקציה להצגת בדיחה חדשה
+        function getNewJoke() {
+            const punchlineElement = document.querySelector('.punchline');
+            punchlineElement.classList.remove('show');
+            
+            // סינון הבדיחות לפי הקטגוריה הנבחרת
+            const filteredJokes = currentCategory === 'all' ? 
+                jokes : 
+                jokes.filter(joke => joke.category === currentCategory);
+            
+            if (filteredJokes.length === 0) {
+                document.querySelector('.joke').textContent = "אין בדיחות בקטגוריה זו";
+                punchlineElement.textContent = "";
+                document.getElementById('current-category').textContent = getCategoryName(currentCategory);
+                return;
+            }
+            
+            // בחירת בדיחה אקראית (שלא הייתה האחרונה)
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * filteredJokes.length);
+            } while (filteredJokes.length > 1 && newIndex === currentJokeIndex);
+            
+            currentJokeIndex = newIndex;
+            const joke = filteredJokes[currentJokeIndex];
+            
+            document.querySelector('.joke').textContent = joke.setup;
+            punchlineElement.textContent = joke.punchline;
+            document.getElementById('current-category').textContent = getCategoryName(joke.category);
+        }
+        
+        // פונקציה להצגת הפואנטה
+        function showPunchline() {
+            document.querySelector('.punchline').classList.add('show');
+        }
+        
+        // פונקציה להוספת בדיחה חדשה
+        function addNewJoke() {
+            const setup = document.getElementById('new-joke-setup').value.trim();
+            const punchline = document.getElementById('new-joke-punchline').value.trim();
+            const category = document.getElementById('new-joke-category').value;
+            
+            if (setup === '' || punchline === '') {
+                alert('יש למלא את הבדיחה והפואנטה!');
+                return;
+            }
+            
+            // הוספת הבדיחה למאגר
+            jokes.push({
+                setup: setup,
+                punchline: punchline,
+                category: category
+            });
+            
+            // עדכון מספר הבדיחות
+            document.getElementById('joke-count').textContent = jokes.length;
+            
+            // ניקוי השדות
+            document.getElementById('new-joke-setup').value = '';
+            document.getElementById('new-joke-punchline').value = '';
+            
+            // עדכון רשימת הבדיחות אם היא מוצגת
+            if (document.getElementById('jokes-list-container').style.display !== 'none') {
+                updateJokesList();
+            }
+            
+            // הצגת הודעת אישור
+            alert('הבדיחה נוספה בהצלחה!');
+            
+            // שמירה למאגר מקומי
+            saveJokesToLocalStorage();
+        }
+        
+        // פונקציה להצגת/הסתרת רשימת הבדיחות
+        function toggleJokeManagement() {
+            const container = document.getElementById('jokes-list-container');
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                updateJokesList();
+            } else {
+                container.style.display = 'none';
+            }
+        }
+        
+        // פונקציה לעדכון רשימת הבדיחות
+        function updateJokesList() {
+            const jokesList = document.getElementById('jokes-list');
+            jokesList.innerHTML = '';
+            
+            jokes.forEach((joke, index) => {
+                const jokeItem = document.createElement('div');
+                jokeItem.className = 'joke-item';
+                jokeItem.innerHTML = `
+                    <div><strong>בדיחה:</strong> ${joke.setup}</div>
+                    <div><strong>פואנטה:</strong> ${joke.punchline}</div>
+                    <div><strong>קטגוריה:</strong> ${getCategoryName(joke.category)}</div>
+                    <div class="joke-item-controls">
+                        <button onclick="editJoke(${index})">ערוך</button>
+                        <button onclick="deleteJoke(${index})">מחק</button>
+                    </div>
+                `;
+                jokesList.appendChild(jokeItem);
+            });
+        }
+        
+        // פונקציה להמרת קוד קטגוריה לשם מלא
+        function getCategoryName(categoryCode) {
+            const categories = {
+                'all': 'הכל',
+                'short': 'קצרה',
+                'programmer': 'מתכנתים',
+                'dad': 'אבא',
+                'long': 'ארוכה',
+                'children': 'ילדים',
+                'animals': 'חיות',
+                'workplace': 'עבודה',
+                'puns': 'משחקי מילים'
+            };
+            return categories[categoryCode] || categoryCode;
+        }
+        
+        // פונקציה לעריכת בדיחה
+        function editJoke(index) {
+            const joke = jokes[index];
+            
+            const newSetup = prompt('ערוך את הבדיחה:', joke.setup);
+            if (newSetup === null) return; // המשתמש ביטל
+            
+            const newPunchline = prompt('ערוך את הפואנטה:', joke.punchline);
+            if (newPunchline === null) return; // המשתמש ביטל
+            
+            // עדכון הבדיחה
+            jokes[index].setup = newSetup;
+            jokes[index].punchline = newPunchline;
+            
+            // עדכון התצוגה
+            updateJokesList();
+            
+            // שמירה למאגר מקומי
+            saveJokesToLocalStorage();
+        }
+        
+        // פונקציה למחיקת בדיחה
+        function deleteJoke(index) {
+            if (confirm('האם אתה בטוח שברצונך למחוק את הבדיחה הזו?')) {
+                jokes.splice(index, 1);
+                
+                // עדכון מספר הבדיחות
+                document.getElementById('joke-count').textContent = jokes.length;
+                
+                // עדכון התצוגה
+                updateJokesList();
+                
+                // שמירה למאגר מקומי
+                saveJokesToLocalStorage();
+            }
+        }
+        
+        // פונקציה לחיפוש בדיחות
+        function searchJokes() {
+            const searchTerm = document.getElementById('joke-search').value.toLowerCase();
+            const jokesList = document.getElementById('jokes-list');
+            jokesList.innerHTML = '';
+            
+            jokes.forEach((joke, index) => {
+                if (joke.setup.toLowerCase().includes(searchTerm) || 
+                    joke.punchline.toLowerCase().includes(searchTerm) ||
+                    getCategoryName(joke.category).toLowerCase().includes(searchTerm)) {
+                    
+                    const jokeItem = document.createElement('div');
+                    jokeItem.className = 'joke-item';
+                    jokeItem.innerHTML = `
+                        <div><strong>בדיחה:</strong> ${joke.setup}</div>
+                        <div><strong>פואנטה:</strong> ${joke.punchline}</div>
+                        <div><strong>קטגוריה:</strong> ${getCategoryName(joke.category)}</div>
+                        <div class="joke-item-controls">
+                            <button onclick="editJoke(${index})">ערוך</button>
+                            <button onclick="deleteJoke(${index})">מחק</button>
+                        </div>
+                    `;
+                    jokesList.appendChild(jokeItem);
+                }
+            });
+        }
+        
+        // פונקציה לייצוא הבדיחות כקובץ JSON
+        function exportJokes() {
+            const jokesJson = JSON.stringify(jokes, null, 4);
+            const blob = new Blob([jokesJson], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'jokes_backup_' + new Date().toISOString().slice(0, 10) + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // הוספת מאזין אירועים לקובץ ייבוא
+        document.getElementById('import-jokes-file').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const importedJokes = JSON.parse(e.target.result);
+                        if (Array.isArray(importedJokes)) {
+                            if (confirm(`נמצאו ${importedJokes.length} בדיחות. האם להחליף את המאגר הקיים או להוסיף לו?`)) {
+                                // החלפת המאגר הקיים
+                                jokes.length = 0;
+                                importedJokes.forEach(joke => jokes.push(joke));
+                            } else {
+                                // הוספה למאגר הקיים
+                                importedJokes.forEach(joke => jokes.push(joke));
+                            }
+                            
+                            // עדכון מספר הבדיחות
+                            document.getElementById('joke-count').textContent = jokes.length;
+                            
+                            // עדכון התצוגה אם היא פתוחה
+                            if (document.getElementById('jokes-list-container').style.display !== 'none') {
+                                updateJokesList();
+                            }
+                            
+                            // שמירה למאגר מקומי
+                            saveJokesToLocalStorage();
+                            
+                            alert('הבדיחות יובאו בהצלחה!');
+                        } else {
+                            alert('פורמט קובץ לא תקין!');
+                        }
+                    } catch (error) {
+                        alert('שגיאה בעיבוד הקובץ: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        // פונקציה להפעלת מצב לילה
+        function enableDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDarkMode);
+        }
+        
+        // פונקציה לשיתוף הבדיחה הנוכחית
+        function shareJoke() {
+            const jokeContainer = document.querySelector('.joke-container');
+            const setup = jokeContainer.querySelector('.joke').textContent;
+            const punchline = jokeContainer.querySelector('.punchline').textContent;
+            
+            document.getElementById('share-joke-text').textContent = setup;
+            document.getElementById('share-joke-full').value = `${setup}\n\n${punchline}`;
+            
+            document.getElementById('share-modal').style.display = 'flex';
+        }
+        
+        // פונקציה לסגירת חלון השיתוף
+        function closeShareModal() {
+            document.getElementById('share-modal').style.display = 'none';
+        }
+        
+        // פונקציה להעתקת הבדיחה ללוח
+        function copyToClipboard() {
+            const textArea = document.getElementById('share-joke-full');
+            textArea.select();
+            document.execCommand('copy');
+            alert('הבדיחה הועתקה ללוח!');
+        }
+        
+        // פונקציה לשמירת הבדיחות במאגר מקומי
+        function saveJokesToLocalStorage() {
+            localStorage.setItem('jokes', JSON.stringify(jokes));
+        }
+        
+        // פונקציה לטעינת הבדיחות מהמאגר המקומי
+        function loadJokesFromLocalStorage() {
+            const savedJokes = localStorage.getItem('jokes');
+            if (savedJokes) {
+                jokes.length = 0; // ניקוי המערך הקיים
+                JSON.parse(savedJokes).forEach(joke => jokes.push(joke));
+                document.getElementById('joke-count').textContent = jokes.length;
+            }
+            
+            // טעינת הגדרת מצב לילה אם קיימת
+            const darkMode = localStorage.getItem('darkMode');
+            if (darkMode === 'true') {
+                document.body.classList.add('dark-mode');
+            }
+        }
+        
+        // טעינת הבדיחות בטעינת העמוד
+        window.addEventListener('DOMContentLoaded', function() {
+            loadJokesFromLocalStorage();
+            // הצג בדיחה ראשונית
+            getNewJoke();
+        });
+    </script>
+</body>
+</html>
