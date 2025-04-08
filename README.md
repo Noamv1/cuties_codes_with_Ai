@@ -1,2 +1,2 @@
-# cuties_codes_with_copilot
+# cuties_codes_with_Ai
 קודים נחמדים שנוצרו עם Copilot
