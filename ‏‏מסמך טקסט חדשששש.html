@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מצפן הלכתי - כיוון תפילה להר הבית</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      direction: rtl;
+      background: linear-gradient(to bottom, #eef2f3, #dfe6e9);
+      padding: 2em;
+    }
+    h1 {
+      color: #2c3e50;
+    }
+    #compass {
+      margin: 2em auto;
+      width: 200px;
+      height: 200px;
+      border: 10px solid #34495e;
+      border-radius: 50%;
+      position: relative;
+      background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Compass_Rose_English_North.svg/512px-Compass_Rose_English_North.svg.png') center/cover no-repeat;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+    #arrow {
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 70px solid red;
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform-origin: bottom center;
+      transform: rotate(0deg);
+    }
+    #direction, #explanation {
+      margin-top: 1em;
+      font-size: 1.2em;
+    }
+    select, button {
+      margin: 1em auto;
+      padding: 0.5em;
+      font-size: 1em;
+    }
+    #langBtn {
+      position: fixed;
+      top: 1em;
+      left: 1em;
+      padding: 0.5em 1em;
+    }
+  </style>
+</head>
+<body>
+  <button id="langBtn">English</button>
+  <h1 id="title">מצפן הלכתי</h1>
+  <p id="desc">כיוון התפילה להר הבית מהמיקום שלך:</p>
+
+  <div id="compass">
+    <div id="arrow"></div>
+  </div>
+
+  <p id="direction">טוען מיקום...</p>
+
+  <select id="locationPicker">
+    <option value="">-- או בחר מיקום ידני --</option>
+    <option value="32.0853,34.7818">תל אביב</option>
+    <option value="31.7683,35.2137">ירושלים</option>
+    <option value="32.7940,34.9896">חיפה</option>
+    <option value="31.2518,34.7913">באר שבע</option>
+    <option value="35.6895,139.6917">טוקיו</option>
+    <option value="40.7128,-74.0060">ניו יורק</option>
+    <option value="51.5074,-0.1278">לונדון</option>
+  </select>
+
+  <p id="explanation"></p>
+
+  <script>
+    const templeLat = 31.7780;
+    const templeLon = 35.2352;
+    const lang = {
+      he: {
+        title: "מצפן הלכתי",
+        desc: "כיוון התפילה להר הבית מהמיקום שלך:",
+        direction: deg => `כיוון: ${deg.toFixed(1)}° מזרחה`,
+        error: "לא ניתן לאתר מיקום. בחר ידנית או הפעל GPS.",
+        explanation: deg => `אתה צריך לפנות לכיוון ${deg.toFixed(1)}°, כלומר ${getDirectionText(deg)}.`
+      },
+      en: {
+        title: "Halachic Compass",
+        desc: "Prayer direction toward the Temple Mount from your location:",
+        direction: deg => `Direction: ${deg.toFixed(1)}° East`,
+        error: "Could not get location. Choose manually or enable GPS.",
+        explanation: deg => `You should face ${deg.toFixed(1)}°, which is roughly ${getDirectionText(deg)}.`
+      }
+    }
+
+    let currentLang = 'he';
+
+    function getBearing(lat1, lon1, lat2, lon2) {
+      const toRad = deg => deg * Math.PI / 180;
+      const toDeg = rad => rad * 180 / Math.PI;
+
+      const dLon = toRad(lon2 - lon1);
+      lat1 = toRad(lat1);
+      lat2 = toRad(lat2);
+
+      const y = Math.sin(dLon) * Math.cos(lat2);
+      const x = Math.cos(lat1)*Math.sin(lat2) -
+                Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLon);
+      let brng = Math.atan2(y, x);
+      brng = toDeg(brng);
+      return (brng + 360) % 360;
+    }
+
+    function getDirectionText(deg) {
+      if (deg >= 337.5 || deg < 22.5) return currentLang === 'he' ? "צפון" : "North";
+      if (deg < 67.5) return currentLang === 'he' ? "צפון-מזרח" : "Northeast";
+      if (deg < 112.5) return currentLang === 'he' ? "מזרח" : "East";
+      if (deg < 157.5) return currentLang === 'he' ? "דרום-מזרח" : "Southeast";
+      if (deg < 202.5) return currentLang === 'he' ? "דרום" : "South";
+      if (deg < 247.5) return currentLang === 'he' ? "דרום-מערב" : "Southwest";
+      if (deg < 292.5) return currentLang === 'he' ? "מערב" : "West";
+      return currentLang === 'he' ? "צפון-מערב" : "Northwest";
+    }
+
+    function rotateArrow(degrees) {
+      document.getElementById("arrow").style.transform = `rotate(${degrees}deg)`;
+    }
+
+    function showDirection(bearing) {
+      document.getElementById("direction").innerText = lang[currentLang].direction(bearing);
+      document.getElementById("explanation").innerText = lang[currentLang].explanation(bearing);
+      rotateArrow(bearing);
+    }
+
+    function locateAndCalculate(lat, lon) {
+      const bearing = getBearing(lat, lon, templeLat, templeLon);
+      showDirection(bearing);
+    }
+
+    // ניסיון אוטומטי לאתר מיקום
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        locateAndCalculate(pos.coords.latitude, pos.coords.longitude);
+      }, err => {
+        document.getElementById("direction").innerText = lang[currentLang].error;
+      });
+    } else {
+      document.getElementById("direction").innerText = lang[currentLang].error;
+    }
+
+    // בחירה ידנית
+    document.getElementById("locationPicker").addEventListener("change", e => {
+      const val = e.target.value;
+      if (val) {
+        const [lat, lon] = val.split(",").map(Number);
+        locateAndCalculate(lat, lon);
+      }
+    });
+
+    // החלפת שפה
+    document.getElementById("langBtn").addEventListener("click", () => {
+      currentLang = currentLang === 'he' ? 'en' : 'he';
+      document.getElementById("title").innerText = lang[currentLang].title;
+      document.getElementById("desc").innerText = lang[currentLang].desc;
+      document.getElementById("langBtn").innerText = currentLang === 'he' ? 'English' : 'עברית';
+    });
+  </script>
+</body>
+</html>
