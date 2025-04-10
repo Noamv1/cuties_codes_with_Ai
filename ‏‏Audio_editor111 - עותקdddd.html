@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MP3 Editor</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --gray: #9ca3af;
+            --danger: #ef4444;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f3f4f6;
+            color: var(--dark);
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            text-align: center;
+            font-size: 2.5rem;
+        }
+        
+        header p {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .main-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        .file-upload {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 30px;
+            border: 2px dashed var(--gray);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload:hover {
+            border-color: var(--primary);
+        }
+        
+        .file-upload svg {
+            width: 64px;
+            height: 64px;
+            color: var(--primary);
+        }
+        
+        .file-upload h2 {
+            font-size: 1.8rem;
+            color: var(--dark);
+        }
+        
+        .file-upload p {
+            color: var(--gray);
+            text-align: center;
+        }
+        
+        .file-upload input {
+            display: none;
+        }
+        
+        .file-upload button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .file-upload button:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .editor {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .waveform {
+            width: 100%;
+            height: 200px;
+            background-color: #f8fafc;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #0ea271;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--gray);
+            color: var(--dark);
+        }
+        
+        .btn-outline:hover {
+            background-color: #f1f5f9;
+        }
+        
+        .time-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        
+        .effects-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .effect-control {
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            background-color: #f8fafc;
+        }
+        
+        .effect-control h3 {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .effect-control label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .effect-control input[type="range"] {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .range-values {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h2 {
+            font-size: 1.5rem;
+        }
+        
+        .close-modal {
+            cursor: pointer;
+            font-size: 1.5rem;
+            background: none;
+            border: none;
+        }
+        
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .share-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .share-option {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .share-option:hover {
+            background-color: #f1f5f9;
+        }
+        
+        .share-option svg {
+            width: 36px;
+            height: 36px;
+        }
+        
+        .share-option span {
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .effects-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>עורך MP3 מתקדם</h1>
+            <p>ערוך, שתף והורד קבצי שמע בקלות</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="main-wrapper">
+            <div class="file-upload" id="upload-area">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                </svg>
+                <h2>העלה קובץ MP3</h2>
+                <p>גרור ושחרר קובץ כאן או לחץ לבחירת קובץ</p>
+                <input type="file" id="file-input" accept="audio/*">
+                <button id="upload-btn">בחר קובץ</button>
+            </div>
+            
+            <div class="editor" id="editor">
+                <h2 id="file-name">שם הקובץ</h2>
+                
+                <div class="waveform" id="waveform"></div>
+                
+                <div class="time-info">
+                    <span id="current-time">00:00</span>
+                    <span id="total-time">00:00</span>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" id="play-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                        </svg>
+                        <span>נגן</span>
+                    </button>
+                    
+                    <button class="btn btn-outline" id="pause-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>
+                        </svg>
+                        <span>השהה</span>
+                    </button>
+                    
+                    <button class="btn btn-outline" id="stop-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/>
+                        </svg>
+                        <span>עצור</span>
+                    </button>
+                    
+                    <button class="btn btn-secondary" id="cut-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M3.5 3.5c-.614-.884-.074-1.962.858-2.5L8 7.226 11.642 1c.932.538 1.472 1.616.858 2.5L8.81 8.61l1.556 2.661a2.5 2.5 0 1 1-.794.637L8 9.73l-1.572 2.177a2.5 2.5 0 1 1-.794-.637L7.19 8.61 3.5 3.5zm2.5 10a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0zm7 0a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0z"/>
+                        </svg>
+                        <span>חתוך</span>
+                    </button>
+                    
+                    <button class="btn btn-outline" id="effects-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+                        </svg>
+                        <span>אפקטים</span>
+                    </button>
+                    
+                    <button class="btn btn-outline" id="share-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M13.5 1a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5zm-8.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm11 5.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
+                        </svg>
+                        <span>שתף</span>
+                    </button>
+                    
+                    <button class="btn btn-primary" id="download-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                        </svg>
+                        <span>הורד</span>
+                    </button>
+                    
+                    <button class="btn btn-danger" id="reset-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
+                        <span>אפס</span>
+                    </button>
+					<!-- הוסף את הקוד הבא לפני הסגירה של div.controls -->
+<button class="btn btn-danger" id="record-btn">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <circle cx="8" cy="8" r="6"/>
+    </svg>
+    <span>הקלט</span>
+</button>
+                </div>
+                
+                <div class="effects-panel" id="effects-panel" style="display: none;">
+                    <div class="effect-control">
+                        <h3>עוצמה</h3>
+                        <label for="volume">שינוי עוצמה</label>
+                        <input type="range" id="volume" min="0" max="200" value="100">
+                        <div class="range-values">
+                            <span>0%</span>
+                            <span>100%</span>
+                            <span>200%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="effect-control">
+                        <h3>מהירות</h3>
+                        <label for="speed">שינוי מהירות</label>
+                        <input type="range" id="speed" min="50" max="200" value="100">
+                        <div class="range-values">
+                            <span>0.5x</span>
+                            <span>1x</span>
+                            <span>2x</span>
+                        </div>
+                    </div>
+                    
+                    <div class="effect-control">
+                        <h3>אקולייזר</h3>
+                        <label for="bass">בס</label>
+                        <input type="range" id="bass" min="0" max="200" value="100">
+                        <div class="range-values">
+                            <span>0%</span>
+                            <span>100%</span>
+                            <span>200%</span>
+                        </div>
+                        
+                        <label for="mid">אמצע</label>
+                        <input type="range" id="mid" min="0" max="200" value="100">
+                        <div class="range-values">
+                            <span>0%</span>
+                            <span>100%</span>
+                            <span>200%</span>
+                        </div>
+                        
+                        <label for="treble">טרבל</label>
+                        <input type="range" id="treble" min="0" max="200" value="100">
+                        <div class="range-values">
+                            <span>0%</span>
+                            <span>100%</span>
+                            <span>200%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="effect-control">
+                        <h3>אפקטים מיוחדים</h3>
+                        <label for="reverb">הד (Reverb)</label>
+                        <input type="range" id="reverb" min="0" max="100" value="0">
+                        <div class="range-values">
+                            <span>ללא</span>
+                            <span>50%</span>
+                            <span>מקסימום</span>
+                        </div>
+                        
+                        <label for="echo">אקו (Echo)</label>
+                        <input type="range" id="echo" min="0" max="100" value="0">
+                        <div class="range-values">
+                            <span>ללא</span>
+                            <span>50%</span>
+                            <span>מקסימום</span>
+                        </div>
+                    </div>
+                    
+                    <div class="effect-control">
+                        <h3>נורמליזציה</h3>
+                        <button class="btn btn-outline" id="normalize-btn">נרמל עוצמה</button>
+                    </div>
+                    
+                    <div class="effect-control">
+                        <h3>הסרת רעשים</h3>
+                        <label for="noise-reduction">הפחתת רעשי רקע</label>
+                        <input type="range" id="noise-reduction" min="0" max="100" value="0">
+                        <div class="range-values">
+                            <span>ללא</span>
+                            <span>50%</span>
+                            <span>מקסימום</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+		<!-- הוסף את הקוד הבא לפני הסגירה של div.effects-panel -->
+<div class="effect-control">
+    <h3>פייד אין/אאוט</h3>
+    <label for="fade-in">פייד אין (שניות)</label>
+    <input type="range" id="fade-in" min="0" max="10" value="0" step="0.1">
+    <div class="range-values">
+        <span>0</span>
+        <span>5</span>
+        <span>10</span>
+    </div>
+    
+    <label for="fade-out">פייד אאוט (שניות)</label>
+    <input type="range" id="fade-out" min="0" max="10" value="0" step="0.1">
+    <div class="range-values">
+        <span>0</span>
+        <span>5</span>
+        <span>10</span>
+    </div>
+    
+    <button class="btn btn-outline" id="apply-fade">החל פייד</button>
+</div>
+    </div>
+    
+    <!-- Share Modal -->
+    <div class="modal" id="share-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>שתף את הקובץ</h2>
+                <button class="close-modal" id="close-share-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>בחר את אפשרות השיתוף:</p>
+                <div class="share-options">
+                    <div class="share-option" data-type="whatsapp">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: #25D366;">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                        </svg>
+                        <span>וואטסאפ</span>
+                    </div>
+                    <div class="share-option" data-type="email">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: #D44638;">
+                            <path d="M0 3v18h24v-18h-24zm6.623 7.929l-4.623 5.712v-9.458l4.623 3.746zm-4.141-5.929h19.035l-9.517 7.713-9.518-7.713zm5.694 7.188l3.824 3.099 3.83-3.104 5.612 6.817h-18.779l5.513-6.812zm9.208-1.264l4.616-3.741v9.348l-4.616-5.607z"/>
+                        </svg>
+                        <span>אימייל</span>
+                    </div>
+                    <div class="share-option" data-type="facebook">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: #1877F2;">
+                            <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/>
+                        </svg>
+                        <span>פייסבוק</span>
+                    </div>
+                    <div class="share-option" data-type="telegram">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: #0088CC;">
+                            <<path d="M12 0c-6.626 0-12 5.372-12 12 0 6.627 5.374 12 12 12 6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12zm5.224 8.312c.543.15.947.543 1.182 1.055.203.363.242.818.199 1.299-.043.48-.123.934-.199 1.379-.521 3.055-1.79 8.307-2.125 9.779-.096.424-.262 1.102-.822 1.141-.654.097-1.158-.257-1.572-.52-.629-.401-1.111-.709-1.727-1.098-.756-.483-2.647-1.71-2.471-2.596.037-.18.232-.338.436-.49 1.072-.834 2.062-1.537 3.105-2.377.758-.611 1.523-1.243 2.241-1.908.097-.098.195-.293.143-.461-.104-.379-.4-.42-.646-.462-.27-.061-.521.1-.662.225-2.186 1.914-4.52 3.643-6.47 5.712-.245.212-.563.416-.889.422-.377.035-.763-.146-1.151-.242-.596-.148-1.172-.279-1.74-.437-.732-.222-1.793-.472-1.793-1.35 0-.5.396-.811.775-1.016.261-.19.525-.378.787-.573.993-.648 1.988-1.302 2.983-1.95.854-.549 1.535-.387 1.202.327-.204.506-.553.90-.901 1.254-1.282 1.31-2.691 2.42-3.814 3.865-.139.178-.277.368-.256.585.067.713.642.823 1.299.822.324-.005.648-.12.876-.323.358-.311.631-.708.917-1.064 1.852-2.309 2.798-4.882 3.57-7.58.176-.677.319-1.359.36-2.066.039-.707-.108-1.351-.31-1.978-.327-.998-.937-1.545-1.903-1.147-.417.157-.756.494-1.074.822-2.084 2.194-3.753 4.743-5.294 7.356-2.296 3.91-4.465 7.919-4.546 12.613-.022 1.292.136 2.579.463 3.829.067.25.163.498.277.738.146.307.405.452.717.455.348.002.545-.15.737-.425.424-.609.487-1.295.437-1.991-.088-1.293.015-2.555.216-3.826.221-1.387.519-2.759.912-4.1.24-.818.507-1.616.814-2.403.54-1.374 1.153-2.69 2.018-3.914.153-.216.331-.415.516-.609.148-.151.328-.271.503-.387.246-.159.678-.219.867.037.203.265.01.617-.086.882-.106.296-.249.577-.363.871-.2.512-.483.994-.646 1.514-.361 1.15-.687 2.322-.818 3.527-.096.835-.111 1.685-.079 2.523.018.425.253 1.012.744.873.392-.111.443-.826.478-1.172.151-1.453.366-2.902.677-4.334.293-1.326.598-2.65.947-3.965.546-2.045 1.033-4.097 1.181-6.217.034-.586.036-1.177-.001-1.763-.033-.506-.125-1.011-.301-1.49-.232-.626-.65-1.085-1.396-1.22z"/>
+                        </svg>
+                        <span>טלגרם</span>
+                    </div>
+                    <div class="share-option" data-type="link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="fill: #555555;">
+                            <path d="M6.188 8.719c.439-.439.926-.801 1.444-1.087 2.887-1.591 6.589-.745 8.445 2.069l-2.246 2.245c-.644-1.469-2.243-2.305-3.834-1.949-.599.134-1.168.433-1.633.898l-4.304 4.306c-1.307 1.307-1.307 3.433 0 4.74 1.307 1.307 3.433 1.307 4.74 0l1.327-1.327c1.207.479 2.501.67 3.779.575l-2.929 2.929c-2.511 2.511-6.582 2.511-9.093 0s-2.511-6.582 0-9.093l4.304-4.306zm6.836-6.836l-2.929 2.929c1.277-.096 2.572.096 3.779.574l1.326-1.326c1.307-1.307 3.433-1.307 4.74 0 1.307 1.307 1.307 3.433 0 4.74l-4.305 4.305c-1.311 1.311-3.44 1.3-4.74 0-.303-.303-.564-.68-.727-1.051l-2.246 2.245c.236.358.481.667.796.982.812.812 1.846 1.417 3.036 1.704 1.542.371 3.194.166 4.613-.617.518-.286 1.005-.648 1.444-1.087l4.304-4.305c2.512-2.511 2.512-6.582.001-9.093-2.511-2.51-6.581-2.51-9.092 0z"/>
+                        </svg>
+                        <span>העתק קישור</span>
+                    </div>
+                </div>
+                <div class="copy-link" style="margin-top: 20px; display: none;">
+                    <input type="text" id="share-link" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" readonly>
+                    <button class="btn btn-outline" id="copy-link-btn" style="margin-top: 10px;">העתק</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancel-share">ביטול</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cut Modal -->
+    <div class="modal" id="cut-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>חתוך קטע</h2>
+                <button class="close-modal" id="close-cut-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>בחר את הנקודות לחיתוך:</p>
+                <div style="margin: 20px 0;">
+                    <label for="start-time">זמן התחלה:</label>
+                    <input type="text" id="start-time" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;" placeholder="00:00">
+                    
+                    <label for="end-time">זמן סיום:</label>
+                    <input type="text" id="end-time" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="00:00">
+                </div>
+                <div style="margin-top: 15px;">
+                    <label>
+                        <input type="radio" name="cut-action" value="keep" checked>
+                        שמור את הקטע שנבחר
+                    </label>
+                    <br>
+                    <label>
+                        <input type="radio" name="cut-action" value="remove">
+                        הסר את הקטע שנבחר
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="apply-cut">בצע חיתוך</button>
+                <button class="btn btn-outline" id="cancel-cut">ביטול</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.4/wavesurfer.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.4/plugin/wavesurfer.regions.min.js"></script>
+
+    <script>
+        // אלמנטים של ממשק המשתמש
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-btn');
+        const editor = document.getElementById('editor');
+        const fileName = document.getElementById('file-name');
+        const currentTime = document.getElementById('current-time');
+        const totalTime = document.getElementById('total-time');
+        const playBtn = document.getElementById('play-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const cutBtn = document.getElementById('cut-btn');
+        const effectsBtn = document.getElementById('effects-btn');
+        const shareBtn = document.getElementById('share-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const effectsPanel = document.getElementById('effects-panel');
+        const shareModal = document.getElementById('share-modal');
+        const closeShareModal = document.getElementById('close-share-modal');
+        const cancelShare = document.getElementById('cancel-share');
+        const cutModal = document.getElementById('cut-modal');
+        const closeCutModal = document.getElementById('close-cut-modal');
+        const applyCut = document.getElementById('apply-cut');
+        const cancelCut = document.getElementById('cancel-cut');
+        const shareOptions = document.querySelectorAll('.share-option');
+        const copyLinkDiv = document.querySelector('.copy-link');
+        const shareLinkInput = document.getElementById('share-link');
+        const copyLinkBtn = document.getElementById('copy-link-btn');
+        
+        // משתנים גלובליים
+        let wavesurfer = null;
+        let originalBuffer = null;
+        let audioContext = null;
+        let isPlaying = false;
+        
+        // פונקציה להמרת שניות לפורמט של זמן
+        function formatTime(seconds) {
+            seconds = Math.floor(seconds);
+            const minutes = Math.floor(seconds / 60);
+            seconds = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // אתחול WaveSurfer
+        function initWaveSurfer() {
+    wavesurfer = WaveSurfer.create({
+        container: '#waveform',
+        waveColor: '#9ca3af',
+        progressColor: '#6366f1',
+        cursorColor: '#10b981',
+        barWidth: 2,
+        barRadius: 3,
+        cursorWidth: 1,
+        height: 200,
+        barGap: 2,
+        responsive: true,
+        plugins: [
+            WaveSurfer.regions.create()
+        ]
+    });
+
+            
+            // מאזינים לאירועים
+            wavesurfer.on('ready', function() {
+    totalTime.textContent = formatTime(wavesurfer.getDuration());
+    editor.style.display = 'flex';
+    uploadArea.style.display = 'none';
+
+    // יצירת אזור בחירה עם גרירה
+    wavesurfer.addRegion({
+        start: 0,
+        end: 5,
+        color: 'rgba(100, 149, 237, 0.3)',
+        drag: true,
+        resize: true
+    });
+});
+
+            wavesurfer.on('audioprocess', function() {
+                currentTime.textContent = formatTime(wavesurfer.getCurrentTime());
+            });
+            
+            wavesurfer.on('finish', function() {
+                isPlaying = false;
+                playBtn.style.display = 'flex';
+                pauseBtn.style.display = 'none';
+            });
+        }
+        
+        // טעינת קובץ אודיו
+        function loadAudio(file) {
+            if (!wavesurfer) {
+                initWaveSurfer();
+            }
+            
+            fileName.textContent = file.name;
+            
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                // שמירת הקובץ המקורי לשימוש בעתיד
+                const arrayBuffer = e.target.result;
+                
+                // יצירת AudioContext אם אין כזה
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // פענוח הקובץ לאודיו בופר
+                audioContext.decodeAudioData(arrayBuffer.slice(0), function(buffer) {
+                    originalBuffer = buffer;
+                    
+                    // טעינת האודיו לWaveSurfer
+                    wavesurfer.loadDecodedBuffer(buffer);
+                });
+            };
+            
+            fileReader.readAsArrayBuffer(file);
+        }
+        
+        // אירועים
+        uploadBtn.addEventListener('click', function() {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                loadAudio(e.target.files[0]);
+            }
+        });
+        
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.style.borderColor = 'var(--primary)';
+        });
+        
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.style.borderColor = 'var(--gray)';
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.style.borderColor = 'var(--gray)';
+            
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                loadAudio(e.dataTransfer.files[0]);
+            }
+        });
+        
+        playBtn.addEventListener('click', function() {
+            if (wavesurfer) {
+                wavesurfer.play();
+                playBtn.style.display = 'none';
+                pauseBtn.style.display = 'flex';
+                isPlaying = true;
+            }
+        });
+        
+        pauseBtn.addEventListener('click', function() {
+            if (wavesurfer) {
+                wavesurfer.pause();
+                playBtn.style.display = 'flex';
+                pauseBtn.style.display = 'none';
+                isPlaying = false;
+            }
+        });
+        
+        stopBtn.addEventListener('click', function() {
+            if (wavesurfer) {
+                wavesurfer.stop();
+                playBtn.style.display = 'flex';
+                pauseBtn.style.display = 'none';
+                isPlaying = false;
+            }
+        });
+        
+        effectsBtn.addEventListener('click', function() {
+            effectsPanel.style.display = effectsPanel.style.display === 'none' ? 'grid' : 'none';
+        });
+        
+        shareBtn.addEventListener('click', function() {
+            shareModal.style.display = 'flex';
+        });
+        
+        closeShareModal.addEventListener('click', function() {
+            shareModal.style.display = 'none';
+            copyLinkDiv.style.display = 'none';
+        });
+        
+        cancelShare.addEventListener('click', function() {
+            shareModal.style.display = 'none';
+            copyLinkDiv.style.display = 'none';
+        });
+        
+        cutBtn.addEventListener('click', function() {
+            cutModal.style.display = 'flex';
+            document.getElementById('start-time').value = formatTime(wavesurfer.getCurrentTime());
+            document.getElementById('end-time').value = formatTime(Math.min(wavesurfer.getCurrentTime() + 10, wavesurfer.getDuration()));
+        });
+        
+        closeCutModal.addEventListener('click', function() {
+            cutModal.style.display = 'none';
+        });
+        
+        cancelCut.addEventListener('click', function() {
+            cutModal.style.display = 'none';
+        });
+        
+      // החלף את קוד כפתור ההורדה הקיים עם הקוד המשופר הבא
+downloadBtn.addEventListener('click', function() {
+    if (!wavesurfer) return;
+    
+    // יצירת תפריט בחירת פורמט הורדה
+    const downloadModal = document.createElement('div');
+    downloadModal.className = 'modal';
+    downloadModal.style.display = 'flex';
+    downloadModal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>בחר פורמט להורדה</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>בחר את פורמט הקובץ הרצוי:</p>
+                <div style="margin: 20px 0; display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn btn-primary" data-format="mp3">MP3 (דחיסה טובה, איכות סבירה)</button>
+                    <button class="btn btn-outline" data-format="wav">WAV (לא דחוס, איכות מקסימלית)</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(downloadModal);
+    
+    // טיפול בסגירת המודל
+    const closeBtn = downloadModal.querySelector('.close-modal');
+    closeBtn.addEventListener('click', function() {
+        document.body.removeChild(downloadModal);
+    });
+    
+    // טיפול בכפתורי הפורמטים
+    const formatBtns = downloadModal.querySelectorAll('[data-format]');
+    formatBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const format = this.getAttribute('data-format');
+            const baseFileName = fileName.textContent.replace(/\.[^/.]+$/, "");
+            
+            if (format === 'mp3') {
+                // הורדה בפורמט MP3 (שימוש באובייקט Blob)
+                wavesurfer.exportImage('image/png').then(function(imgData) {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(wavesurfer.getDecodedData());
+                    a.download = baseFileName + "_edited.mp3";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
+                // המרה לבלוב ויצירת קישור להורדה
+                wavesurfer.exportImage('image/png').then(function(imgData) {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(wavesurfer.getDecodedData());
+                    a.download = fileName.textContent.replace(/\.[^/.]+$/, "") + "_edited.mp3";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                });
+            }
+        });
+        
+        resetBtn.addEventListener('click', function() {
+            if (wavesurfer && originalBuffer) {
+                wavesurfer.loadDecodedBuffer(originalBuffer);
+                
+                // איפוס כל הסליידרים
+                document.getElementById('volume').value = 100;
+                document.getElementById('speed').value = 100;
+                document.getElementById('bass').value = 100;
+                document.getElementById('mid').value = 100;
+                document.getElementById('treble').value = 100;
+                document.getElementById('reverb').value = 0;
+                document.getElementById('echo').value = 0;
+                document.getElementById('noise-reduction').value = 0;
+            }
+        });
+        
+        // אירועים לאפשרויות שיתוף
+        shareOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const shareType = this.getAttribute('data-type');
+                
+                if (shareType === 'link') {
+                    // יצירת קישור שיתוף
+                    const shareLink = `https://mp3editor.example.com/share/${encodeURIComponent(fileName.textContent)}`;
+                    shareLinkInput.value = shareLink;
+                    copyLinkDiv.style.display = 'block';
+                } else {
+                    // פעולת שיתוף לפי הסוג
+                    let shareUrl = '';
+                    const audioName = encodeURIComponent(fileName.textContent);
+                    
+                    switch(shareType) {
+                        case 'whatsapp':
+                            shareUrl = `https://wa.me/?text=Check%20out%20my%20edited%20audio:%20https://mp3editor.example.com/share/${audioName}`;
+                            break;
+                        case 'email':
+                            shareUrl = `mailto:?subject=Check%20out%20my%20edited%20audio&body=https://mp3editor.example.com/share/${audioName}`;
+                            break;
+                        case 'facebook':
+                            shareUrl = `https://www.facebook.com/sharer/sharer.php?u=https://mp3editor.example.com/share/${audioName}`;
+                            break;
+                        case 'telegram':
+                            shareUrl = `https://t.me/share/url?url=https://mp3editor.example.com/share/${audioName}&text=Check%20out%20my%20edited%20audio`;
+                            break;
+                    }
+                    
+                    if (shareUrl) {
+                        window.open(shareUrl, '_blank');
+                    }
+                }
+            });
+        });
+        
+        copyLinkBtn.addEventListener('click', function() {
+            shareLinkInput.select();
+            document.execCommand('copy');
+            copyLinkBtn.textContent = 'הועתק!';
+            setTimeout(function() {
+                copyLinkBtn.textContent = 'העתק';
+            }, 2000);
+        });
+        
+        // פעולת חיתוך
+       // החלף את פונקציית applyCut הקיימת ב-script בתחתית הקובץ
+applyCut.addEventListener('click', function() {
+    if (!wavesurfer) return;
+    
+    // המרת ערכי זמן לשניות - תומך בפורמט שעות:דקות:שניות
+    const getSeconds = (timeStr) => {
+        const parts = timeStr.split(':');
+        if (parts.length === 2) {
+            return parseInt(parts[0]) * 60 + parseFloat(parts[1]);
+        } else if (parts.length === 3) {
+            return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2]);
+        }
+        return parseFloat(timeStr);
+    };
+    
+    const startTime = getSeconds(document.getElementById('start-time').value);
+    const endTime = getSeconds(document.getElementById('end-time').value);
+    const action = document.querySelector('input[name="cut-action"]:checked').value;
+    
+    // בדיקת תקינות
+    if (startTime >= endTime || startTime < 0 || endTime > wavesurfer.getDuration()) {
+        alert('זמני החיתוך אינם תקינים');
+        return;
+    }
+    
+    // ביצוע החיתוך
+    const currentBuffer = wavesurfer.getDecodedData();
+    const sampleRate = currentBuffer.sampleRate;
+    const channels = currentBuffer.numberOfChannels;
+    
+    // חישוב הגודל החדש של הבאפר
+    let newDuration;
+    if (action === 'keep') {
+        newDuration = endTime - startTime;
+    } else { // remove
+        newDuration = wavesurfer.getDuration() - (endTime - startTime);
+    }
+    
+    const newBuffer = audioContext.createBuffer(channels, Math.ceil(newDuration * sampleRate), sampleRate);
+    
+    // העתקת המידע הרצוי לבאפר החדש
+    for (let channel = 0; channel < channels; channel++) {
+        const oldData = currentBuffer.getChannelData(channel);
+        const newData = newBuffer.getChannelData(channel);
+        
+        if (action === 'keep') {
+            // העתקת הקטע הנבחר בלבד
+            const startIndex = Math.floor(startTime * sampleRate);
+            for (let i = 0; i < newBuffer.length; i++) {
+                if (startIndex + i < oldData.length) {
+                    newData[i] = oldData[startIndex + i];
+                }
+            }
+        } else { // remove
+            // העתקת כל מה שמחוץ לקטע הנבחר
+            const startIndex = Math.floor(startTime * sampleRate);
+            const endIndex = Math.floor(endTime * sampleRate);
+            
+            let newIndex = 0;
+            // העתקת החלק לפני הקטע המוסר
+            for (let i = 0; i < startIndex; i++) {
+                newData[newIndex++] = oldData[i];
+            }
+            
+            // העתקת החלק אחרי הקטע המוסר
+            for (let i = endIndex; i < oldData.length; i++) {
+                if (newIndex < newData.length) {
+                    newData[newIndex++] = oldData[i];
+                }
+            }
+        }
+    }
+    
+    // טעינת הבאפר החדש
+    wavesurfer.loadDecodedBuffer(newBuffer);
+    cutModal.style.display = 'none';
+    
+    // עדכון זמן כולל לאחר החיתוך
+    totalTime.textContent = formatTime(newBuffer.duration);
+});
+        
+        // טיפול באפקטים
+        const volumeSlider = document.getElementById('volume');
+        volumeSlider.addEventListener('input', function() {
+            if (wavesurfer) {
+                wavesurfer.setVolume(this.value / 100);
+            }
+        });
+        
+        const speedSlider = document.getElementById('speed');
+        speedSlider.addEventListener('input', function() {
+            if (wavesurfer) {
+                wavesurfer.setPlaybackRate(this.value / 100);
+            }
+        });
+        
+        // פונקציה לנורמליזציה
+        document.getElementById('normalize-btn').addEventListener('click', function() {
+            if (wavesurfer) {
+                const buffer = wavesurfer.getDecodedData();
+                const channels = buffer.numberOfChannels;
+                
+                // מציאת הערך המקסימלי
+                let maxVal = 0;
+                for (let channel = 0; channel < channels; channel++) {
+                    const data = buffer.getChannelData(channel);
+                    for (let i = 0; i < data.length; i++) {
+                        maxVal = Math.max(maxVal, Math.abs(data[i]));
+                    }
+                }
+                
+                // נרמול אם נדרש
+                if (maxVal > 0 && maxVal !== 1) {
+                    const gain = 0.99 / maxVal; // השארת מעט מרווח מהמקסימום
+                    
+                    const newBuffer = audioContext.createBuffer(channels, buffer.length, buffer.sampleRate);
+                    
+                    for (let channel = 0; channel < channels; channel++) {
+                        const data = buffer.getChannelData(channel);
+                        const newData = newBuffer.getChannelData(channel);
+                        
+                        for (let i = 0; i < data.length; i++) {
+                            newData[i] = data[i] * gain;
+                        }
+                    }
+                    
+                    wavesurfer.loadDecodedBuffer(newBuffer);
+                    alert('הנורמליזציה בוצעה בהצלחה');
+                }
+            }
+        });
+		
+        // פונקציות מתקדמות נוספות יכולות להתווסף כאן
+              
+        // איתחול עם הטעינה
+        window.addEventListener('load', function() {
+            pauseBtn.style.display = 'none';
+        });
+		// הוסף את הקוד הבא בסוף הסקריפט, לפני הסגירה של תג script האחרון
+document.getElementById('apply-fade').addEventListener('click', function() {
+    if (!wavesurfer) return;
+    
+    const fadeInDuration = parseFloat(document.getElementById('fade-in').value);
+    const fadeOutDuration = parseFloat(document.getElementById('fade-out').value);
+    
+    if (fadeInDuration === 0 && fadeOutDuration === 0) {
+        alert('אנא הגדר משך זמן לפייד אין או פייד אאוט');
+        return;
+    }
+    
+    const buffer = wavesurfer.getDecodedData();
+    const channels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const totalSamples = buffer.length;
+    
+    const fadeInSamples = Math.floor(fadeInDuration * sampleRate);
+    const fadeOutSamples = Math.floor(fadeOutDuration * sampleRate);
+    
+    const newBuffer = audioContext.createBuffer(channels, buffer.length, sampleRate);
+    
+    for (let channel = 0; channel < channels; channel++) {
+        const data = buffer.getChannelData(channel);
+        const newData = newBuffer.getChannelData(channel);
+        
+        // העתקת כל הדאטה
+        for (let i = 0; i < data.length; i++) {
+            newData[i] = data[i];
+        }
+        
+        // החלת פייד אין
+        if (fadeInDuration > 0) {
+            for (let i = 0; i < fadeInSamples; i++) {
+                const gain = i / fadeInSamples; // קו ליניארי מ-0 ל-1
+                newData[i] = data[i] * gain;
+            }
+        }
+        
+        // החלת פייד אאוט
+        if (fadeOutDuration > 0) {
+            const startIdx = totalSamples - fadeOutSamples;
+            for (let i = 0; i < fadeOutSamples; i++) {
+                const gain = 1 - (i / fadeOutSamples); // קו ליניארי מ-1 ל-0
+                newData[startIdx + i] = data[startIdx + i] * gain;
+            }
+        }
+    }
+    
+    wavesurfer.loadDecodedBuffer(newBuffer);
+    alert('הפייד הוחל בהצלחה');
+});
+// הוסף את הקוד הבא בסוף הסקריפט, לפני הסגירה של תג script האחרון
+// מאזין לשינויים בסליידר האקו
+document.getElementById('echo').addEventListener('change', function() {
+    applyEchoEffect(this.value);
+});
+
+// פונקציה להחלת אפקט אקו
+function applyEchoEffect(strength) {
+    if (!wavesurfer || !originalBuffer) return;
+    
+    const echoStrength = parseInt(strength) / 100;
+    if (echoStrength <= 0.01) {
+        // אם האקו כבוי, החזר את הקובץ המקורי
+        wavesurfer.loadDecodedBuffer(originalBuffer);
+        return;
+    }
+    
+    const buffer = wavesurfer.getDecodedData();
+    const channels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    
+    // הגדרת משך עיכוב (בשניות) ועוצמה
+    const delayTime = 0.3; // עיכוב של 300 מילישניות
+    const delaySamples = Math.floor(delayTime * sampleRate);
+    const echoVolume = echoStrength * 0.7; // עוצמת האקו
+    
+    const newBuffer = audioContext.createBuffer(channels, buffer.length + delaySamples, sampleRate);
+    
+    for (let channel = 0; channel < channels; channel++) {
+        const data = buffer.getChannelData(channel);
+        const newData = newBuffer.getChannelData(channel);
+        
+        // העתקת האודיו המקורי
+        for (let i = 0; i < data.length; i++) {
+            newData[i] = data[i];
+        }
+        
+        // הוספת האקו
+        for (let i = 0; i < data.length; i++) {
+            if (i + delaySamples < newData.length) {
+                newData[i + delaySamples] += data[i] * echoVolume;
+            }
+        }
+    }
+    
+    wavesurfer.loadDecodedBuffer(newBuffer);
+}
+// הוסף את הקוד הבא בסוף הסקריפט, לפני הסגירה של תג script האחרון
+// מאזין לשינויים בסליידר הרברב
+document.getElementById('reverb').addEventListener('change', function() {
+    applyReverbEffect(this.value);
+});
+
+// פונקציה להחלת אפקט רברב (הד)
+function applyReverbEffect(strength) {
+    if (!wavesurfer || !originalBuffer) return;
+    
+    const reverbStrength = parseInt(strength) / 100;
+    if (reverbStrength <= 0.01) {
+        // אם הרברב כבוי, החזר את הקובץ המקורי
+        wavesurfer.loadDecodedBuffer(originalBuffer);
+        return;
+    }
+    
+    const buffer = wavesurfer.getDecodedData();
+    const channels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    
+    // יצירת אפקט רברב פשוט עם כמה עיכובים שונים
+    const delays = [
+        { time: 0.03, gain: 0.7 },
+        { time: 0.06, gain: 0.5 },
+        { time: 0.09, gain: 0.4 },
+        { time: 0.12, gain: 0.3 },
+        { time: 0.15, gain: 0.2 },
+        { time: 0.2, gain: 0.1 },
+        { time: 0.25, gain: 0.05 }
+    ];
+    
+    // מציאת האורך המקסימלי של הבאפר החדש
+    const maxDelaySamples = Math.floor(delays[delays.length - 1].time * sampleRate);
+    const newLength = buffer.length + maxDelaySamples;
+    const newBuffer = audioContext.createBuffer(channels, newLength, sampleRate);
+    
+    for (let channel = 0; channel < channels; channel++) {
+        const data = buffer.getChannelData(channel);
+        const newData = newBuffer.getChannelData(channel);
+        
+        // העתקת האודיו המקורי
+        for (let i = 0; i < data.length; i++) {
+            newData[i] = data[i];
+        }
+        
+        // הוספת כל שכבות הרברב
+        delays.forEach(delay => {
+            const delaySamples = Math.floor(delay.time * sampleRate);
+            const delayGain = delay.gain * reverbStrength;
+            
+            for (let i = 0; i < data.length; i++) {
+                if (i + delaySamples < newData.length) {
+                    newData[i + delaySamples] += data[i] * delayGain;
+                }
+            }
+        });
+    }
+    
+    wavesurfer.loadDecodedBuffer(newBuffer);
+}
+// הוסף את הקוד הבא בסוף הסקריפט, לפני הסגירה של תג script האחרון
+// מאזין לשינויים בסליידר הסרת רעשים
+document.getElementById('noise-reduction').addEventListener('change', function() {
+    applyNoiseReduction(this.value);
+});
+
+// פונקציה להחלת אפקט הסרת רעשים
+function applyNoiseReduction(strength) {
+    if (!wavesurfer || !originalBuffer) return;
+    
+    const reductionStrength = parseInt(strength) / 100;
+    if (reductionStrength <= 0.01) {
+        // אם ההפחתה כבויה, החזר את הקובץ המקורי
+        wavesurfer.loadDecodedBuffer(originalBuffer);
+        return;
+    }
+    
+    const buffer = wavesurfer.getDecodedData();
+    const channels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    
+    const newBuffer = audioContext.createBuffer(channels, buffer.length, sampleRate);
+    
+    // סף דינמי להפחתת רעשים - הערכים הנמוכים יוחלשו יותר
+    const threshold = 0.01 + (0.05 * (1 - reductionStrength)); // ערך סף בסיסי נמוך, תלוי בעוצמת ההפחתה
+    
+    for (let channel = 0; channel < channels; channel++) {
+        const data = buffer.getChannelData(channel);
+        const newData = newBuffer.getChannelData(channel);
+        
+        // עיבוד בסיסי למיצוע (לחלק מהסינון)
+        let sum = 0;
+        const avgWindow = Math.floor(sampleRate * 0.01); // חלון מיצוע של 10ms
+        
+        for (let i = 0; i < data.length; i++) {
+            const absValue = Math.abs(data[i]);
+            
+            // חישוב ממוצע נע בחלון הנוכחי
+            if (i % avgWindow === 0) {
+                sum = 0;
+                for (let j = 0; j < avgWindow; j++) {
+                    if (i + j < data.length) {
+                        sum += Math.abs(data[i + j]);
+                    }
+                }
+                sum /= avgWindow;
+            }
+            
+            // אם הערך הנוכחי מתחת לסף, הפחת אותו
+            if (absValue < threshold || sum < threshold * 1.5) {
+                const reduction = 1.0 - (reductionStrength * 0.95);
+                newData[i] = data[i] * reduction;
+            } else {
+                newData[i] = data[i];
+            }
+        }
+    }
+    
+    wavesurfer.loadDecodedBuffer(newBuffer);
+}
+// הוסף את הקוד הבא בסוף הסקריפט, לפני הסגירה של תג script האחרון
+// מאזינים לשינויים בסליידרים של האקולייזר
+document.getElementById('bass').addEventListener('change', function() {
+    applyEQ();
+});
+document.getElementById('mid').addEventListener('change', function() {
+    applyEQ();
+});
+document.getElementById('treble').addEventListener('change', function() {
+    applyEQ();
+});
+
+// פונקציה להחלת אפקט אקולייזר
+function applyEQ() {
+    if (!wavesurfer || !originalBuffer) return;
+    
+    const bassGain = parseInt(document.getElementById('bass').value) / 100;
+    const midGain = parseInt(document.getElementById('mid').value) / 100;
+    const trebleGain = parseInt(document.getElementById('treble').value) / 100;
+    
+    // אם הכל על 100%, אין צורך בשינוי
+    if (Math.abs(bassGain - 1) < 0.01 && Math.abs(midGain - 1) < 0.01 && Math.abs(trebleGain - 1) < 0.01) {
+        wavesurfer.loadDecodedBuffer(originalBuffer);
+        return;
+    }
+    
+    const buffer = originalBuffer;  // השתמש בבאפר המקורי כדי למנוע אפקט מצטבר
+    const channels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    
+    const newBuffer = audioContext.createBuffer(channels, buffer.length, sampleRate);
+    
+    // חלוקה גסה של תדרים - אלו ערכים משוערים, בפועל צריך פילטרים אמיתיים
+    const bassFreq = Math.floor(sampleRate / 8); // תדרים נמוכים (עד ~5500Hz ב-44.1kHz)
+    const midFreq = Math.floor(sampleRate / 4);  // תדרים בינוניים (עד ~11kHz ב-44.1kHz)
+    
+    // נסיון לסימולציית אקולייזר בסיסי מאוד
+    // שימוש ב-FFT יהיה יעיל יותר ומדויק יותר
+    for (let channel = 0; channel < channels; channel++) {
+        const data = buffer.getChannelData(channel);
+        const newData = newBuffer.getChannelData(channel);
+        
+        // סימולציה מאוד בסיסית של השפעה על תדרים שונים
+        for (let i = 0; i < data.length; i++) {
+            // מדגם נוכחי ושכנים
+            const prev = i > 0 ? data[i-1] : 0;
+            const curr = data[i];
+            const next = i < data.length - 1 ? data[i+1] : 0;
+            
+            // אומדנים גסים מאוד של תדרים
+            // בס - שינויים איטיים
+            const bassComponent = (prev + curr + next) / 3 * bassGain;
+            
+            // אמצע - שינויים בינוניים
+            const midComponent = ((curr - prev) * 0.5 + (next - curr) * 0.5) * midGain;
+            
+            // טרבל - שינויים מהירים
+            const trebleComponent = (curr - (prev + next) / 2) * trebleGain;
+            
+            // סיכום המרכיבים
+            newData[i] = bassComponent + midComponent + trebleComponent;
+        }
+    }
+    
+    wavesurfer.loadDecodedBuffer(newBuffer);
+}
+// הוסף את הקוד הבא בסוף הסקריפט, לפני הסגירה של תג script האחרון
+// משתנים גלובליים להקלטה
+let mediaRecorder;
+let recordedChunks = [];
+let isRecording = false;
+
+// מאזין לכפתור ההקלטה
+document.getElementById('record-btn').addEventListener('click', function() {
+    if (!isRecording) {
+        startRecording();
+    } else {
+        stopRecording();
+    }
+});
+
+// פונקציה להתחלת הקלטה
+async function startRecording() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        mediaRecorder = new MediaRecorder(stream);
+        recordedChunks = [];
+        
+        mediaRecorder.addEventListener('dataavailable', function(e) {
+            if (e.data.size > 0) {
+                recordedChunks.push(e.data);
+            }
+        });
+        
+        mediaRecorder.addEventListener('stop', async function() {
+            const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+            
+            // המרת הבלוב לאובייקט File
+            const file = new File([blob], 'recording_' + new Date().toISOString() + '.webm', { type: 'audio/webm' });
+            
+            // טעינת ההקלטה לעורך
+            loadAudio(file);
+            
+            // ניקוי
+            isRecording = false;
+            document.getElementById('record-btn').textContent = 'הקלט';
+            document.getElementById('record-btn').classList.remove('btn-secondary');
+            document.getElementById('record-btn').classList.add('btn-danger');
+        });
+        
+        mediaRecorder.start();
+        isRecording = true;
+        document.getElementById('record-btn').innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M5 3.5h6A1.5 1.5 0 0 1 12.5 5v6a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 11V5A1.5 1.5 0 0 1 5 3.5z"/>
+            </svg>
+            <span>עצור הקלטה</span>
+        `;
+        document.getElementById('record-btn').classList.remove('btn-danger');
+        document.getElementById('record-btn').classList.add('btn-secondary');
+        
+    } catch (err) {
+        console.error('שגיאה בהקלטה:', err);
+        alert('לא ניתן לגשת למיקרופון. אנא ודא שיש לך מיקרופון מחובר ושהינך מאשר גישה');
+    }
+}
+
+// פונקציה לעצירת הקלטה
+function stopRecording() {
+    if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+}
+    </script>
+</body>
+</html>
