@@ -857,3 +857,754 @@
         // שמירת הגדרות
         function saveSettings() {
             localStorage.setItem
+			localStorage.setItem('jokeGeneratorSettings', JSON.stringify(appSettings));
+            alert('ההגדרות נשמרו בהצלחה!');
+        }
+        
+        // החלת גודל הגופן
+        function applyFontSize(size) {
+            const jokeElement = document.querySelector('.joke');
+            const punchlineElement = document.querySelector('.punchline');
+            
+            switch(size) {
+                case 'small':
+                    jokeElement.style.fontSize = '18px';
+                    punchlineElement.style.fontSize = '16px';
+                    break;
+                case 'medium':
+                    jokeElement.style.fontSize = '24px';
+                    punchlineElement.style.fontSize = '20px';
+                    break;
+                case 'large':
+                    jokeElement.style.fontSize = '32px';
+                    punchlineElement.style.fontSize = '28px';
+                    break;
+            }
+        }
+        
+        // איפוס הגדרות
+        function resetSettings() {
+            appSettings.darkMode = false;
+            appSettings.autoPunchline = false;
+            appSettings.punchlineDelay = 3;
+            appSettings.saveHistory = true;
+            appSettings.fontSize = "medium";
+            
+            document.body.classList.remove('dark-mode');
+            document.getElementById('dark-mode-switch').checked = false;
+            document.getElementById('auto-punchline-switch').checked = false;
+            document.getElementById('punchline-delay').value = 3;
+            document.getElementById('delay-value').textContent = '3';
+            document.getElementById('save-history-switch').checked = true;
+            document.getElementById('font-size-select').value = "medium";
+            
+            applyFontSize("medium");
+            saveSettings();
+        }
+        
+        // טעינת בדיחות מקומיות
+        function loadJokes() {
+            const savedJokes = localStorage.getItem('jokes');
+            if (savedJokes) {
+                jokes = JSON.parse(savedJokes);
+            }
+            updateJokeCount();
+            displayJokesInAdmin();
+        }
+        
+        // שמירת בדיחות
+        function saveJokes() {
+            localStorage.setItem('jokes', JSON.stringify(jokes));
+            updateJokeCount();
+        }
+        
+        // עדכון מספר הבדיחות
+        function updateJokeCount() {
+            document.getElementById('joke-count').textContent = jokes.length;
+        }
+        
+        // טעינת היסטוריה
+        function loadHistory() {
+            const savedHistory = localStorage.getItem('jokeHistory');
+            if (savedHistory) {
+                jokeHistory = JSON.parse(savedHistory);
+                updateHistoryDisplay();
+            }
+            
+            const savedFavorites = localStorage.getItem('favoriteJokes');
+            if (savedFavorites) {
+                favoriteJokes = JSON.parse(savedFavorites);
+                updateFavoritesDisplay();
+            }
+        }
+        
+        // שמירת היסטוריה
+        function saveHistory() {
+            if (appSettings.saveHistory) {
+                localStorage.setItem('jokeHistory', JSON.stringify(jokeHistory));
+            }
+        }
+        
+        // שמירת מועדפים
+        function saveFavorites() {
+            localStorage.setItem('favoriteJokes', JSON.stringify(favoriteJokes));
+        }
+        
+        // סינון בדיחות לפי קטגוריה
+        function getJokesByCategory(category) {
+            if (category === 'all') {
+                return jokes;
+            } else {
+                return jokes.filter(joke => joke.category === category);
+            }
+        }
+        
+        // בחירת בדיחה אקראית
+        function getRandomJoke() {
+            const filteredJokes = getJokesByCategory(currentCategory);
+            if (filteredJokes.length === 0) {
+                return {
+                    setup: "אין בדיחות בקטגוריה זו.",
+                    punchline: "נסה להוסיף בדיחה או לבחור קטגוריה אחרת.",
+                    category: currentCategory
+                };
+            }
+            
+            let newIndex;
+            // וודא שלא נראה את אותה בדיחה פעמיים ברצף
+            do {
+                newIndex = Math.floor(Math.random() * filteredJokes.length);
+            } while (newIndex === currentJokeIndex && filteredJokes.length > 1);
+            
+            currentJokeIndex = newIndex;
+            return filteredJokes[currentJokeIndex];
+        }
+        
+        // הצגת בדיחה חדשה
+        function displayNewJoke() {
+            resetUI();
+            
+            const joke = getRandomJoke();
+            originalJoke = joke;
+            isTranslated = false;
+            
+            document.querySelector('.joke').textContent = joke.setup;
+            document.querySelector('.punchline').textContent = joke.punchline;
+            document.getElementById('current-category').textContent = getCategoryName(joke.category);
+            
+            const filteredJokes = getJokesByCategory(currentCategory);
+            document.getElementById('joke-counter').textContent = `${currentJokeIndex + 1}/${filteredJokes.length}`;
+            
+            // אפשור כפתורים
+            document.getElementById('show-punchline-btn').disabled = joke.punchline.length === 0;
+            document.getElementById('translate-joke-btn').disabled = false;
+            document.getElementById('download-joke-btn').disabled = false;
+            document.getElementById('favorite-joke-btn').disabled = false;
+            
+            // בדיקה אם זו בדיחה מועדפת
+            updateFavoriteButtonUI();
+            
+            // איפוס דירוג
+            resetRating();
+            
+            // הצגת דירוג ממוצע אם קיים
+            displayAverageRating(joke);
+            
+            // הוספה להיסטוריה
+            if (appSettings.saveHistory) {
+                addToHistory(joke);
+            }
+            
+            // הצגת פואנטה אוטומטית
+            if (autoShowPunchline && joke.punchline.length > 0) {
+                clearTimeout(punchlineTimer);
+                showProgressBar();
+                punchlineTimer = setTimeout(() => {
+                    showPunchline();
+                }, punchlineDelay * 1000);
+            }
+        }
+        
+        // איפוס ממשק בדיחה
+        function resetUI() {
+            document.querySelector('.punchline').classList.remove('show');
+            document.querySelector('.progress-container').style.display = 'none';
+            clearTimeout(punchlineTimer);
+        }
+        
+        // הצגת שם קטגוריה
+        function getCategoryName(category) {
+            const categoryNames = {
+                'short': 'קצרות',
+                'programmer': 'מתכנתים',
+                'dad': 'אבא',
+                'long': 'ארוכות',
+                'children': 'ילדים',
+                'animals': 'חיות',
+                'workplace': 'עבודה',
+                'puns': 'משחקי מילים',
+                'custom': 'מותאמות אישית',
+                'all': 'הכל'
+            };
+            
+            return categoryNames[category] || category;
+        }
+        
+        // הצגת פואנטה
+        function showPunchline() {
+            document.querySelector('.punchline').classList.add('show');
+            document.querySelector('.progress-container').style.display = 'none';
+        }
+        
+        // הצגת סרגל התקדמות
+        function showProgressBar() {
+            const progressContainer = document.querySelector('.progress-container');
+            const progressBar = document.querySelector('.progress-bar');
+            
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                } else {
+                    width += (100 / (punchlineDelay * 10));
+                    progressBar.style.width = width + '%';
+                }
+            }, 100);
+        }
+        
+        // הוספה להיסטוריה
+        function addToHistory(joke) {
+            // בדיקה אם כבר קיימת בהיסטוריה
+            const existingIndex = jokeHistory.findIndex(j => j.setup === joke.setup);
+            if (existingIndex !== -1) {
+                jokeHistory.splice(existingIndex, 1);
+            }
+            
+            // הוספה לתחילת המערך
+            jokeHistory.unshift({
+                setup: joke.setup,
+                punchline: joke.punchline,
+                category: joke.category,
+                timestamp: new Date().toISOString()
+            });
+            
+            // הגבלת הגודל ל-20 בדיחות
+            if (jokeHistory.length > 20) {
+                jokeHistory.pop();
+            }
+            
+            saveHistory();
+            updateHistoryDisplay();
+        }
+        
+        // עדכון תצוגת היסטוריה
+        function updateHistoryDisplay() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            
+            if (jokeHistory.length === 0) {
+                historyList.innerHTML = '<p>אין היסטוריית בדיחות.</p>';
+                return;
+            }
+            
+            jokeHistory.forEach((joke, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                const date = new Date(joke.timestamp);
+                const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+                
+                historyItem.innerHTML = `
+                    <div>${joke.setup}</div>
+                    <div class="joke-info">
+                        <small>${getCategoryName(joke.category)} | ${formattedDate}</small>
+                    </div>
+                `;
+                
+                historyItem.addEventListener('click', () => {
+                    showJokeFromHistory(index);
+                });
+                
+                historyList.appendChild(historyItem);
+            });
+        }
+        
+        // הצגת בדיחה מההיסטוריה
+        function showJokeFromHistory(index) {
+            const joke = jokeHistory[index];
+            originalJoke = joke;
+            isTranslated = false;
+            
+            document.querySelector('.joke').textContent = joke.setup;
+            document.querySelector('.punchline').textContent = joke.punchline;
+            document.getElementById('current-category').textContent = getCategoryName(joke.category);
+            
+            document.querySelector('.punchline').classList.add('show');
+            document.getElementById('show-punchline-btn').disabled = true;
+            document.getElementById('translate-joke-btn').disabled = false;
+            document.getElementById('download-joke-btn').disabled = false;
+            document.getElementById('favorite-joke-btn').disabled = false;
+            
+            document.querySelector('.joke-history').style.display = 'none';
+            
+            updateFavoriteButtonUI();
+            resetRating();
+            displayAverageRating(joke);
+        }
+        
+        // עדכון תצוגת מועדפים
+        function updateFavoritesDisplay() {
+            const favoritesList = document.getElementById('favorites-list');
+            favoritesList.innerHTML = '';
+            
+            if (favoriteJokes.length === 0) {
+                favoritesList.innerHTML = '<p>אין בדיחות מועדפות.</p>';
+                return;
+            }
+            
+            favoriteJokes.forEach((joke, index) => {
+                const favoriteItem = document.createElement('div');
+                favoriteItem.className = 'history-item';
+                
+                favoriteItem.innerHTML = `
+                    <div>${joke.setup}</div>
+                    <div class="joke-info">
+                        <small>${getCategoryName(joke.category)}</small>
+                        <button class="icon-button remove-favorite" data-index="${index}">❌</button>
+                    </div>
+                `;
+                
+                favoriteItem.querySelector('.history-item').addEventListener('click', () => {
+                    showJokeFromFavorites(index);
+                });
+                
+                favoriteItem.querySelector('.remove-favorite').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    removeFavorite(index);
+                });
+                
+                favoritesList.appendChild(favoriteItem);
+            });
+        }
+        
+        // הצגת בדיחה מהמועדפים
+        function showJokeFromFavorites(index) {
+            const joke = favoriteJokes[index];
+            originalJoke = joke;
+            isTranslated = false;
+            
+            document.querySelector('.joke').textContent = joke.setup;
+            document.querySelector('.punchline').textContent = joke.punchline;
+            document.getElementById('current-category').textContent = getCategoryName(joke.category);
+            
+            document.querySelector('.punchline').classList.add('show');
+            document.getElementById('show-punchline-btn').disabled = true;
+            document.getElementById('translate-joke-btn').disabled = false;
+            document.getElementById('download-joke-btn').disabled = false;
+            document.getElementById('favorite-joke-btn').disabled = false;
+            
+            document.querySelector('.favorites-container').style.display = 'none';
+            
+            updateFavoriteButtonUI();
+            resetRating();
+            displayAverageRating(joke);
+        }
+        
+        // הוספה למועדפים
+        function toggleFavorite() {
+            const currentJoke = isTranslated ? originalJoke : {
+                setup: document.querySelector('.joke').textContent,
+                punchline: document.querySelector('.punchline').textContent,
+                category: originalJoke.category
+            };
+            
+            const existingIndex = favoriteJokes.findIndex(j => j.setup === currentJoke.setup);
+            
+            if (existingIndex !== -1) {
+                // הסרה מהמועדפים
+                favoriteJokes.splice(existingIndex, 1);
+                document.getElementById('favorite-joke-btn').textContent = '❤️ מועדף';
+            } else {
+                // הוספה למועדפים
+                favoriteJokes.push(currentJoke);
+                document.getElementById('favorite-joke-btn').textContent = '❌ הסר ממועדפים';
+            }
+            
+            saveFavorites();
+            updateFavoritesDisplay();
+        }
+        
+        // הסרה מהמועדפים
+        function removeFavorite(index) {
+            favoriteJokes.splice(index, 1);
+            saveFavorites();
+            updateFavoritesDisplay();
+            updateFavoriteButtonUI();
+        }
+        
+        // עדכון כפתור מועדפים
+        function updateFavoriteButtonUI() {
+            const currentJoke = isTranslated ? originalJoke : {
+                setup: document.querySelector('.joke').textContent,
+                punchline: document.querySelector('.punchline').textContent
+            };
+            
+            const isFavorite = favoriteJokes.some(j => j.setup === currentJoke.setup);
+            
+            if (isFavorite) {
+                document.getElementById('favorite-joke-btn').textContent = '❌ הסר ממועדפים';
+            } else {
+                document.getElementById('favorite-joke-btn').textContent = '❤️ מועדף';
+            }
+        }
+        
+        // תרגום בדיחה
+        async function translateJoke() {
+            if (!originalJoke) return;
+            
+            if (isTranslated) {
+                // חזרה לבדיחה המקורית
+                document.querySelector('.joke').textContent = originalJoke.setup;
+                document.querySelector('.punchline').textContent = originalJoke.punchline;
+                document.getElementById('translate-joke-btn').textContent = 'תרגם לאנגלית';
+                isTranslated = false;
+            } else {
+                // תרגום לאנגלית
+                try {
+                    const translateButton = document.getElementById('translate-joke-btn');
+                    translateButton.disabled = true;
+                    translateButton.textContent = 'מתרגם...';
+                    
+                    // כאן יש לבצע תרגום אמיתי באמצעות API
+                    // אנחנו נשתמש בתרגום מדומה לדוגמה
+                    setTimeout(() => {
+                        const translatedSetup = `Translated: ${originalJoke.setup}`;
+                        const translatedPunchline = `Translated: ${originalJoke.punchline}`;
+                        
+                        document.querySelector('.joke').textContent = translatedSetup;
+                        document.querySelector('.punchline').textContent = translatedPunchline;
+                        
+                        translateButton.disabled = false;
+                        translateButton.textContent = 'חזור לעברית';
+                        isTranslated = true;
+                    }, 1000);
+                } catch (error) {
+                    alert('שגיאה בתרגום: ' + error.message);
+                }
+            }
+        }
+        
+        // דירוג בדיחה
+        function rateJoke(rating) {
+            if (!originalJoke) return;
+            
+            let jokesWithRatings = JSON.parse(localStorage.getItem('jokeRatings') || '[]');
+            
+            const existingIndex = jokesWithRatings.findIndex(j => j.setup === originalJoke.setup);
+            
+            if (existingIndex !== -1) {
+                // עדכון דירוג קיים
+                jokesWithRatings[existingIndex].ratings.push(rating);
+            } else {
+                // יצירת דירוג חדש
+                jokesWithRatings.push({
+                    setup: originalJoke.setup,
+                    ratings: [rating]
+                });
+            }
+            
+            localStorage.setItem('jokeRatings', JSON.stringify(jokesWithRatings));
+            
+            // עדכון תצוגת דירוג
+            updateRatingUI(rating);
+            displayAverageRating(originalJoke);
+        }
+        
+        // עדכון ממשק דירוג
+        function updateRatingUI(rating) {
+            const stars = document.querySelectorAll('.rating-star');
+            stars.forEach(star => {
+                if (parseInt(star.dataset.rating) <= rating) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+        
+        // איפוס דירוג
+        function resetRating() {
+            const stars = document.querySelectorAll('.rating-star');
+            stars.forEach(star => {
+                star.classList.remove('active');
+            });
+            document.getElementById('avg-rating').textContent = '';
+        }
+        
+        // הצגת דירוג ממוצע
+        function displayAverageRating(joke) {
+            const jokesWithRatings = JSON.parse(localStorage.getItem('jokeRatings') || '[]');
+            const jokeRating = jokesWithRatings.find(j => j.setup === joke.setup);
+            
+            if (jokeRating && jokeRating.ratings.length > 0) {
+                const avg = jokeRating.ratings.reduce((a, b) => a + b, 0) / jokeRating.ratings.length;
+                document.getElementById('avg-rating').textContent = ` (${avg.toFixed(1)}/5)`;
+            } else {
+                document.getElementById('avg-rating').textContent = '';
+            }
+        }
+        
+        // שמירת בדיחה כתמונה
+        function downloadJoke() {
+            const jokeText = document.querySelector('.joke').textContent;
+            const punchlineText = document.querySelector('.punchline').textContent;
+            
+            const canvas = document.getElementById('joke-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // הגדרת גודל הקנבס
+            canvas.width = 800;
+            canvas.height = 600;
+            
+            // רקע
+            ctx.fillStyle = document.body.classList.contains('dark-mode') ? '#333' : '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // כותרת
+            ctx.font = 'bold 32px Arial';
+            ctx.fillStyle = document.body.classList.contains('dark-mode') ? '#eee' : '#333';
+            ctx.textAlign = 'center';
+            ctx.fillText('מחולל הבדיחות', canvas.width / 2, 80);
+            
+            // טקסט הבדיחה
+            ctx.font = '24px Arial';
+            
+            // פיצול טקסט ארוך לשורות
+            const wrapText = (text, x, y, maxWidth, lineHeight) => {
+                const words = text.split(' ');
+                let line = '';
+                let testLine = '';
+                let lineArray = [];
+                
+                for (let i = 0; i < words.length; i++) {
+                    testLine += words[i] + ' ';
+                    const metrics = ctx.measureText(testLine);
+                    if (metrics.width > maxWidth && i > 0) {
+                        lineArray.push(line);
+                        line = words[i] + ' ';
+                        testLine = words[i] + ' ';
+                    } else {
+                        line = testLine;
+                    }
+                }
+                
+                lineArray.push(line);
+                
+                for (let i = 0; i < lineArray.length; i++) {
+                    ctx.fillText(lineArray[i], x, y + (i * lineHeight));
+                }
+                
+                return y + lineArray.length * lineHeight;
+            };
+            
+            // כתיבת הבדיחה
+            let y = 150;
+            y = wrapText(jokeText, canvas.width / 2, y, 700, 30);
+            
+            // כתיבת הפואנטה אם יש
+            if (punchlineText.length > 0) {
+                ctx.font = 'bold 24px Arial';
+                ctx.fillStyle = document.body.classList.contains('dark-mode') ? '#66b0ff' : '#0077cc';
+                y += 30;
+                wrapText(punchlineText, canvas.width / 2, y, 700, 30);
+            }
+            
+            // לוגו
+            ctx.font = '16px Arial';
+            ctx.fillStyle = document.body.classList.contains('dark-mode') ? '#aaa' : '#666';
+            ctx.fillText('מחולל הבדיחות | נוצר על ידי Noam_v', canvas.width / 2, canvas.height - 30);
+            
+            // יצירת קישור להורדה
+            const link = document.createElement('a');
+            link.download = 'בדיחה.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // הוספת בדיחה חדשה
+        function addNewJoke() {
+            const setup = document.getElementById('new-joke-setup').value.trim();
+            const punchline = document.getElementById('new-joke-punchline').value.trim();
+            const category = document.getElementById('new-joke-category').value;
+            
+            if (setup === '') {
+                alert('יש להזין טקסט בדיחה!');
+                return;
+            }
+            
+            const newJoke = {
+                setup: setup,
+                punchline: punchline,
+                category: category
+            };
+            
+            jokes.push(newJoke);
+            saveJokes();
+            
+            alert('הבדיחה נוספה בהצלחה!');
+            
+            // ניקוי שדות הטופס
+            document.getElementById('new-joke-setup').value = '';
+            document.getElementById('new-joke-punchline').value = '';
+            
+            // עדכון רשימת הבדיחות בניהול
+            displayJokesInAdmin();
+        }
+        
+        // תצוגת בדיחות באזור הניהול
+        function displayJokesInAdmin() {
+            const jokesList = document.getElementById('jokes-list');
+            jokesList.innerHTML = '';
+            
+            jokes.forEach((joke, index) => {
+                const jokeItem = document.createElement('div');
+                jokeItem.className = 'joke-item';
+                jokeItem.innerHTML = `
+                    <div><strong>בדיחה:</strong> ${joke.setup}</div>
+                    <div><strong>פואנטה:</strong> ${joke.punchline}</div>
+                    <div><strong>קטגוריה:</strong> ${getCategoryName(joke.category)}</div>
+                    <div class="joke-item-controls">
+                        <button onclick="editJoke(${index})">ערוך</button>
+                        <button onclick="deleteJoke(${index})">מחק</button>
+                    </div>
+                `;
+                jokesList.appendChild(jokeItem);
+            });
+        }
+        
+        // חיפוש בדיחות
+        function searchJokes() {
+            const searchTerm = document.getElementById('joke-search').value.toLowerCase();
+            const jokesList = document.getElementById('jokes-list');
+            jokesList.innerHTML = '';
+            
+            const filteredJokes = jokes.filter(joke => 
+                joke.setup.toLowerCase().includes(searchTerm) || 
+                joke.punchline.toLowerCase().includes(searchTerm)
+            );
+            
+            if (filteredJokes.length === 0) {
+                jokesList.innerHTML = '<p>לא נמצאו תוצאות.</p>';
+                return;
+            }
+            
+            filteredJokes.forEach((joke, index) => {
+                const originalIndex = jokes.findIndex(j => j.setup === joke.setup && j.punchline === joke.punchline);
+                
+                const jokeItem = document.createElement('div');
+                jokeItem.className = 'joke-item';
+                jokeItem.innerHTML = `
+                    <div><strong>בדיחה:</strong> ${joke.setup}</div>
+                    <div><strong>פואנטה:</strong> ${joke.punchline}</div>
+                    <div><strong>קטגוריה:</strong> ${getCategoryName(joke.category)}</div>
+                    <div class="joke-item-controls">
+                        <button onclick="editJoke(${originalIndex})">ערוך</button>
+                        <button onclick="deleteJoke(${originalIndex})">מחק</button>
+                    </div>
+                `;
+                jokesList.appendChild(jokeItem);
+            });
+        }
+        
+        // עריכת בדיחה
+        function editJoke(index) {
+            const joke = jokes[index];
+            
+            const newSetup = prompt('ערוך את הבדיחה:', joke.setup);
+            if (newSetup === null) return;
+            
+            const newPunchline = prompt('ערוך את הפואנטה:', joke.punchline);
+            if (newPunchline === null) return;
+            
+            joke.setup = newSetup;
+            joke.punchline = newPunchline;
+            
+            saveJokes();
+            displayJokesInAdmin();
+            
+            alert('הבדיחה עודכנה בהצלחה!');
+        }
+        
+        // מחיקת בדיחה
+        function deleteJoke(index) {
+            if (confirm('האם אתה בטוח שברצונך למחוק בדיחה זו?')) {
+                jokes.splice(index, 1);
+                saveJokes();
+                displayJokesInAdmin();
+                alert('הבדיחה נמחקה בהצלחה!');
+            }
+        }
+        
+        // ייצוא בדיחות
+        function exportJokes() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(jokes));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "jokes.json");
+            document.body.appendChild(downloadAnchorNode); // required for firefox
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+        
+			// ייצוא בדיחות בפורמט CSV
+			function exportJokesCSV() {
+				let csvContent = "בדיחה,פואנטה,קטגוריה\n";
+				
+				jokes.forEach(joke => {
+					csvContent += `"${joke.setup.replace(/"/g, '""')}","${joke.punchline.replace(/"/g, '""')}","${joke.category}"\n`;
+				});
+				
+				const dataStr = "data:text/csv;charset=utf-8," + encodeURIComponent(csvContent);
+				const downloadAnchorNode = document.createElement('a');
+				downloadAnchorNode.setAttribute("href", dataStr);
+				downloadAnchorNode.setAttribute("download", "jokes.csv");
+				document.body.appendChild(downloadAnchorNode);
+				downloadAnchorNode.click();
+				downloadAnchorNode.remove();
+			}
+			
+			// ייבוא בדיחות
+			document.getElementById('import-jokes-file').addEventListener('change', function(e) {
+				const file = e.target.files[0];
+				if (!file) return;
+				
+				const reader = new FileReader();
+				reader.onload = function(e) {
+					try {
+						const importedJokes = JSON.parse(e.target.result);
+						
+						if (Array.isArray(importedJokes)) {
+							if (confirm(`נמצאו ${importedJokes.length} בדיחות. האם ברצונך להוסיף אותן?`)) {
+								// מיזוג בדיחות ללא כפילויות
+								const uniqueJokes = [];
+								const existingSetups = jokes.map(j => j.setup);
+								
+								importedJokes.forEach(joke => {
+									if (!existingSetups.includes(joke.setup)) {
+										uniqueJokes.push(joke);
+									}
+								});
+								
+								jokes = [...jokes, ...uniqueJokes];
+								saveJokes();
+								displayJokesInAdmin();
+								
+								alert(`נוספו ${uniqueJokes.length} בדיחות חדשות.`);
+							}
+						} else {
+							alert('הקובץ אינו במבנה תקין.');
+						}
+					} catch (

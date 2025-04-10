@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <title>תאריך ושעה נוכחיים</title>
+</head>
+<body>
+    <h1>תאריך ושעה נוכחיים</h1>
+    <p id="datetime"></p>
+
+    <script>
+        function updateDateTime() {
+            const now = new Date();
+            const datetimeString = now.toLocaleString('he-IL');
+            document.getElementById('datetime').innerText = datetimeString;
+        }
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+    </script>
+</body>
+</html>
