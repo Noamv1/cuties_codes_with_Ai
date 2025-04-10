@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חידון בבא קמא</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+    <script>
+        let users = {};
+        let currentUser = null;
+        let questions = {
+            "פרק א": [
+                {"question": "מהם ארבעת אבות הנזיקין?", "options": ["שור, בור, מבעה והבער", "אש, מים, רוח ועפר", "בית, שדה, חמור ושור"], "answer": 0},
+            {"question": "מהו עונשו של גנב שנתפס?", "options": ["כפל", "מיתה", "גלות"], "answer": 0},
+            {"question": "מהו דין בור ברשות הרבים?", "options": ["פטור", "חייב בנזקי אדם ובהמה", "רק בנזקי אדם"], "answer": 1},
+            {"question": "מה ההבדל בין תם למועד?", "options": ["תם משלם חצי נזק, מועד משלם נזק שלם", "תם פטור, מועד משלם כפל", "אין הבדל"], "answer": 0}
+        ];
+        
+        function registerUser() {
+            let username = prompt("הכנס שם משתמש חדש:");
+            let password = prompt("בחר סיסמה:");
+            if (username in users) {
+                alert("שם משתמש כבר קיים!");
+            } else {
+                users[username] = { password: password, scores: [] };
+                alert("משתמש נרשם בהצלחה!");
+            }
+        }
+        
+        function loginUser() {
+            let username = prompt("הכנס שם משתמש:");
+            let password = prompt("הכנס סיסמה:");
+            if (username in users && users[username].password === password) {
+                currentUser = username;
+                alert("התחברת בהצלחה!");
+            } else {
+                alert("שם משתמש או סיסמה שגויים! נסה שוב.");
+            }
+        }
+        
+        function runQuiz() {
+            if (!currentUser) {
+                alert("נא להתחבר למשתמש לפני תחילת החידון.");
+                return;
+            }
+            let score = 0;
+            let totalQuestions = questions.length;
+            
+            questions.forEach((q, index) => {
+                let userAnswer = prompt(q.question + "\n" + q.options.map((opt, i) => `${i + 1}. ${opt}`).join("\n"));
+                if (parseInt(userAnswer) - 1 === q.answer) {
+                    score++;
+                    alert("נכון!");
+                } else {
+                    alert("שגוי! התשובה הנכונה היא: " + q.options[q.answer]);
+                }
+            });
+            
+            alert(`סיימת את החידון! הציון שלך: ${score}/${totalQuestions}`);
+            users[currentUser].scores.push(`ציון: ${score}/${totalQuestions}`);
+        }
+    </script>
+</head>
+<body>
+    <h1>ברוכים הבאים לחידון בבא קמא</h1>
+    <button onclick="registerUser()">הרשמה</button>
+    <button onclick="loginUser()">התחברות</button>
+    <button onclick="runQuiz()">התחלת חידון</button>
+</body>
+</html>

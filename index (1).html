@@ -1,0 +1,50 @@
+<html>
+    
+    <head>
+        
+        <style>
+            
+            body {
+                text-align: center;
+                font-family: cursive;
+            }
+            
+        </style>
+        
+    </head>
+    
+<body>
+<h1>שלום וברוכים הבאים לאתר של נעם</h1>
+<h2>?מה שלומכם</h2>
+<input type="text" id="myColor" >
+<button onclick="cB()">שנה צבע</button>
+
+<br>
+
+<input type="text" id="myName" >
+<button onclick="gM()">ברך אותי</button>
+
+
+<script>
+    
+    function cB()
+    {
+        
+    myColor = document.getElementById("myColor").value;
+    document.body.style.backgroundColor=myColor;
+      
+
+        
+    }
+    
+   function gM()
+{
+
+myName = document.getElementById("myName").value;
+alert("שלום "+myName);
+
+} 
+</script>
+
+</body>
+</html>

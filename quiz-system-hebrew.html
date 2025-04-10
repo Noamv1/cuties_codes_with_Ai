@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חידון בבא קמא</title>
+    <style>
+        /* CSS Variables */
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #f5a623;
+            --background-color: #f5f5f5;
+            --text-color: #333;
+        }
+
+        /* Base Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Section -->
+        <div id="loginSection" class="section">
+            <h2>התחברות</h2>
+            <input type="text" id="username" class="input-field" placeholder="שם משתמש">
+            <input type="password" id="password" class="input-field" placeholder="סיסמה">
+            <button onclick="userManager.login()" class="btn btn-primary">התחבר</button>
+            <button onclick="userManager.showRegister()" class="btn">הרשמה</button>
+        </div>
+
+        <!-- Register Section -->
+        <div id="registerSection" class="section hidden">
+            <h2>הרשמה</h2>
+            <input type="text" id="newUsername" class="input-field" placeholder="שם משתמש">
+            <input type="password" id="newPassword" class="input-field" placeholder="סיסמה">
+            <input type="password" id="confirmPassword" class="input-field" placeholder="אימות סיסמה">
+            <button onclick="userManager.register()" class="btn btn-primary">הרשם</button>
+            <button onclick="userManager.showLogin()" class="btn">חזרה להתחברות</button>
+        </div>
+
+        <!-- Quiz Section -->
+        <div id="quizSection" class="section hidden">
+            <h2>חידון</h2>
+            <div id="questionDisplay"></div>
+            <div id="optionsDisplay"></div>
+            <button onclick="quizManager.submitAnswer()" class="btn btn-primary">שלח תשובה</button>
+        </div>
+    </div>
+
+    <script>
+        // User Management System
+        class UserManager {
+            constructor() {
+                this.currentUser = null;
+                this.users = this.loadUsers();
+            }
+
+            loadUsers() {
+                const data = localStorage.getItem('users');
+                return data ? JSON.parse(data) : {};
+            }
+
+            saveUsers() {
+                localStorage.setItem('users', JSON.stringify(this.users));
+            }
+
+            login() {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                if (this.users[username] && this.users[username].password === password) {
+                    this.currentUser = username;
+                    this.showQuiz();
+                } else {
+                    alert('שם משתמש או סיסמה שגויים');
+                }
+            }
+
+            register() {
+                const username = document.getElementById('newUsername').value;
+                const password = document.getElementById('newPassword').value;
+                const confirm = document.getElementById('confirmPassword').value;
+
+                if (password !== confirm) {
+                    alert('הסיסמאות אינן תואמות');
+                    return;
+                }
+
+                if (this.users[username]) {
+                    alert('שם משתמש כבר קיים');
+                    return;
+                }
+
+                this.users[username] = {
+                    password: password,
+                    scores: []
+                };
+
+                this.saveUsers();
+                this.showLogin();
+                alert('ההרשמה הושלמה בהצלחה');
+            }
+
+            showRegister() {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('registerSection').classList.remove('hidden');
+            }
+
+            showLogin() {
+                document.getElementById('registerSection').classList.add('hidden');
+                document.getElementById('loginSection').classList.remove('hidden');
+            }
+
+            showQuiz() {
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('quizSection').classList.remove('hidden');
+                quizManager.startQuiz();
+            }
+        }
+
+        // Quiz Management System
+        class QuizManager {
+            constructor() {
+                this.questions = this.loadQuestions();
+                this.currentQuestion = 0;
+                this.score = 0;
+            }
+
+            loadQuestions() {
+                return [
+                    {
+                        text: "מהם ארבעה אבות נזיקין?",
+                        options: [
+                            "השור, הבור, המבעה וההבער",
+                            "השור, הבור, המזיק וההבער",
+                            "השן, הרגל, הקרן והבור",
+                            "האש, הבור, השור והאדם"
+                        ],
+                        correctAnswer: 0
+                    },
+                    // Add more questions here
+                ];
+            }
+
+            startQuiz() {
+                this.currentQuestion = 0;
+                this.score = 0;
+                this.showQuestion();
+            }
+
+            showQuestion() {
+                const question = this.questions[this.currentQuestion];
+                document.getElementById('questionDisplay').innerHTML = `
+                    <h3>שאלה ${this.currentQuestion + 1} מתוך ${this.questions.length}</h3>
+                    <p>${question.text}</p>
+                `;
+
+                const optionsHtml = question.options.map((option, index) => `
+                    <div class="option" onclick="quizManager.selectOption(${index})">
+                        ${option}
+                    </div>
+                `).join('');
+
+                document.getElementById('optionsDisplay').innerHTML = optionsHtml;
+            }
+
+            selectOption(index) {
+                const options = document.getElementsByClassName('option');
+                for (let option of options) {
+                    option.classList.remove('selected');
+                }
+                options[index].classList.add('selected');
+            }
+
+            submitAnswer() {
+                const selected = document.querySelector('.option.selected');
+                if (!selected) {
+                    alert('נא לבחור תשובה');
+                    return;
+                }
+
+                const selectedIndex = Array.from(document.getElementsByClassName('option')).indexOf(selected);
+                if (selectedIndex === this.questions[this.currentQuestion].correctAnswer) {
+                    this.score++;
+                }
+
+                this.currentQuestion++;
+                if (this.currentQuestion < this.questions.length) {
+                    this.showQuestion();
+                } else {
+                    this.showResults();
+                }
+            }
+
+            showResults() {
+                const percentage = (this.score / this.questions.length) * 100;
+                document.getElementById('quizSection').innerHTML = `
+                    <h2>תוצאות</h2>
+                    <p>ציון: ${percentage}%</p>
+                    <p>תשובות נכונות: ${this.score} מתוך ${this.questions.length}</p>
+                    <button onclick="quizManager.startQuiz()" class="btn btn-primary">התחל מחדש</button>
+                `;
+            }
+        }
+
+        // Initialize systems
+        const userManager = new UserManager();
+        const quizManager = new QuizManager();
+    </script>
+</body>
+</html>
